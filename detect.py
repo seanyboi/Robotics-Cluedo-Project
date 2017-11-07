@@ -13,6 +13,26 @@ from geometry_msgs.msg import Twist, Vector3
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 
+# OpenCV for contours (to be added to the class)
+im = cv2.imread('/Users/dailand10/Desktop/revolver.png')
+imgray = cv2.cvtColor(im,cv2.COLOR_BGR2GRAY)
+ret,thresh = cv2.threshold(imgray,127,255,0)
+im2, contours, hierarchy = cv2.findContours(thresh,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+#cv2.drawContours(im, contours, -1, (0,255,0), 3)
+
+maxCnt = 0.0
+cntDraw = contours[0]
+for cnt in contours:
+    if cv2.contourArea(cnt) > maxCnt:
+        cntDraw = cnt
+        maxCnt = cv2.contourArea(cnt)
+    else:
+        pass
+
+cv2.drawContours(im, [cntDraw], 0, (0,255,0), 3)
+
+cv2.imshow("Image", im)
+cv2.waitKey(0)
 
 
 if __name__ == '__main__':
@@ -56,6 +76,8 @@ class Detect():
         cv2.namedWindow('Original')
         cv2.imshow('Original', cv_image)
         cv2.waitKey(5)
+
+
 
 
 
