@@ -53,7 +53,7 @@ class Detect:
     # Checks for images (AR Marker)
     def spin(self):
 
-        if !self.listener.lookupTransform('/map', '/ar_marker_0', rospy.Time(0))[0]:
+        if not self.listener.lookupTransform('/map', '/ar_marker_0', rospy.Time(0))[0]:
             self.velocity.z = 0.2
 
         else:
@@ -86,7 +86,7 @@ class Detect:
 
         # Write image position
         try:
-            file = open(“poses.txt”,”w”)
+            file = open("poses.txt", "w")
             file.write(str(self.listener.lookupTransform('/map', '/ar_marker_0', rospy.Time(0))[0]))
             file.close()
 
