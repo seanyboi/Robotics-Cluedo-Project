@@ -13,7 +13,7 @@ from geometry_msgs.msg import Twist, Vector3
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 
-class Detect():
+class Detect:
 
     # Constructor
     def __init__(self):
