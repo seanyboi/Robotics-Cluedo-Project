@@ -102,7 +102,7 @@ def main(args):
     try:
         # Asking tf to find the transform of child_frame in parent_frame.
         rospy.spin()
-        
+
     except (KeyboardInterrupt, tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException) as e:
         print('Error during main execution' + e)
 
