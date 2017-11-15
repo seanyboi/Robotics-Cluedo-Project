@@ -5,4 +5,5 @@ from vision import Detect
 
 # Instances
 detect = Detect()
-detect.spin()
+detect.marker()
+# detect.spin()
