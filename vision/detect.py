@@ -8,6 +8,7 @@ import sys
 import tf
 import time
 import os
+from heapq import nlargest
 
 # Topics messages types
 from geometry_msgs.msg import Twist, Vector3
@@ -61,7 +62,7 @@ class Detect:
         if not data.markers:
             # Spin robot as to find a marker
             self.velocity.angular.z = 0.2
-            print("Rotating trying to find markers")
+            print("Finding markers ...")
 
         elif data.markers and not self.centered:
             # Center image and stop spinning
@@ -69,7 +70,6 @@ class Detect:
             self.center(self.cv_image)
 
         else:
-            self.center(self.cv_image)
             self.velocity.angular.z = 0
             print("Processed finished")
 
@@ -96,11 +96,6 @@ class Detect:
 
         # Apply convolutional kernel to smooth image
         blurred = blur(image)
-
-        # Show image
-        cv2.namedWindow('Blurred Image')
-        cv2.imshow('Blurred Image', blurred)
-        cv2.waitKey(5)
 
         # Convert image to greyscale
         grey = greyscale(blurred)
@@ -135,7 +130,7 @@ class Detect:
         cv2.waitKey(5)
 
         # Find the contours
-        contours, hierarchy = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        (contours, _) = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         # Compute areas for contours found
         cnt_areas = [cv2.contourArea(contours[n]) for n in range(len(contours))]
@@ -143,7 +138,6 @@ class Detect:
         # Get biggest contour index
         maxCnt_index = cnt_areas.index(max(cnt_areas))
 
-        # Draw the contour
         cv2.drawContours(image, contours, maxCnt_index, (0,255,0), 3)
 
         # Show image
@@ -155,9 +149,6 @@ class Detect:
         M = cv2.moments(contours[maxCnt_index])
         max_cnt_x = int(M['m10']/M['m00'])
         max_cnt_y = int(M['m01']/M['m00'])
-        x,y,w,h = cv2.boundingRect(contours[maxCnt_index])
-        print("Dimensions:", x,y,w,h)
-        print("Image:", image[x:y, w:h])
 
         # Centre image within the frame
         if self.x - max_cnt_x > 330:
@@ -170,10 +161,9 @@ class Detect:
 
             # Stop rotation (centering completed)
             self.velocity.angular.z = 0
-            self.centered = True
 
             # Take a snapshot of the centered image
-            cv2.imwrite(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'data/detections/image.png')), image[x:y, w:h])
+            cv2.imwrite(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'data/detections/image.png')), image)
 
             # tf listener
             listener = tf.TransformListener()
@@ -188,8 +178,7 @@ class Detect:
             except Exception as e:
                 print("Error while writing image pose: ", e)
 
-        # TODO: Call next logic
-        self.centered = False
+            self.centered = True
 
         # Publish velocity
         self.velocity_pub.publish(self.velocity)

@@ -18,7 +18,7 @@ def threshold(img):
 
 # Morphological closing
 def morph(img):
-    return cv2.morphologyEx(img, cv2.MORPH_CLOSE, (5,5))
+    return cv2.morphologyEx(img, cv2.MORPH_OPEN, (5,5))
 
 # Canny edge detector
 def canny(img):
