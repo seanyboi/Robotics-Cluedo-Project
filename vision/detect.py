@@ -17,7 +17,7 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 
 # Helper functions
-from helpers import processing
+from helpers import blur, greyscale, threshold, morph, canny
 
 """
     The class functionality is to
@@ -88,9 +88,9 @@ class Detect:
     def center(self, image):
 
         # Show image
-        cv2.namedWindow('Original Image')
-        cv2.imshow('Original Image', image)
-        cv2.waitKey(5)
+        # cv2.namedWindow('Original Image')
+        # cv2.imshow('Original Image', image)
+        # cv2.waitKey(5)
 
         print("Centering in process")
 

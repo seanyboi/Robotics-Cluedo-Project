@@ -23,11 +23,10 @@ from __future__ import print_function
 
 import numpy as np
 import cv2
+import os
 
 # local modules
-from helpers import video, common, plane_tracker
-from common import getsize, draw_keypoints
-from plane_tracker import PlaneTracker
+from helpers import getsize, draw_keypoints, PlaneTracker
 
 class App:
 
@@ -40,22 +39,19 @@ class App:
         # Set tracker
         self.setTracker()
 
-        # Crate window
-        cv2.namedWindow('Webcam')
-
     # Set plane tracker
     def setTracker(self):
 
         # Load characters
-        plum    = cv2.imread('images/plum.png')
-        mustard = cv2.imread('images/mustard.png')
-        peacock = cv2.imread('images/peacock.png')
-        scarlet = cv2.imread('images/scarlet.png')
+        plum    = cv2.imread(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'data/images/plum.png')))
+        mustard = cv2.imread(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'data/images/mustard.png')))
+        peacock = cv2.imread(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'data/images/peacock.png')))
+        scarlet = cv2.imread(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'data/images/scarlet.png')))
 
         # Load weapons
-        rope     = cv2.imread('images/rope.png')
-        wrench   = cv2.imread('images/wrench.png')
-        revolver = cv2.imread('images/revolver.png')
+        rope     = cv2.imread(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'data/images/rope.png')))
+        wrench   = cv2.imread(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'data/images/wrench.png')))
+        revolver = cv2.imread(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'data/images/revolver.png')))
 
         # Characters rect
         plum_rect    = (0, 0, plum.shape[1], plum.shape[0])
@@ -98,5 +94,5 @@ class App:
 if __name__ == '__main__':
     print(__doc__)
 
-    image = cv2.imread('mustard.png')
-    App().checkImage()
+    image = cv2.imread('image45.png')
+    App().checkImage(image)
