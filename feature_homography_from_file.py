@@ -30,65 +30,74 @@ import common
 from common import getsize, draw_keypoints
 from plane_tracker import PlaneTracker
 
-
 class App:
 
-    def __init__(self, src):
+    # Constructor
+    def __init__(self):
 
-        self.cap = video.create_capture(src)
-        self.frame = None
-        self.paused = False
+        # Descriptor tracker
         self.tracker = PlaneTracker()
 
-		#Add template images to tracker
-        frame = cv2.imread('mustard.png')
-        rect = (0, 0, frame.shape[1], frame.shape[0])
-        self.tracker.add_target(frame.copy(), rect, None)
+        # Set tracker
+        self.setTracker()
 
-        cv2.namedWindow('plane')
+        # Crate window
+        cv2.namedWindow('Webcam')
 
-    def run(self):
+    # Set plane tracker
+    def setTracker(self):
 
-        while True:
-            playing = not self.paused
+        # Load characters
+        plum    = cv2.imread('images/plum.png')
+        mustard = cv2.imread('images/mustard.png')
+        peacock = cv2.imread('images/peacock.png')
+        scarlet = cv2.imread('images/scarlet.png')
 
-            if playing or self.frame is None:
+        # Load weapons
+        rope     = cv2.imread('images/rope.png')
+        wrench   = cv2.imread('images/wrench.png')
+        revolver = cv2.imread('images/revolver.png')
 
-                ret, frame = self.cap.read()
-                if not ret:
-                    break
+        # Characters rect
+        plum_rect    = (0, 0, plum.shape[1], plum.shape[0])
+        mustard_rect = (0, 0, mustard.shape[1], mustard.shape[0])
+        peacock_rect = (0, 0, peacock.shape[1], peacock.shape[0])
+        scarlet_rect = (0, 0, scarlet.shape[1], scarlet.shape[0])
 
-                self.frame = frame.copy()
+        # Weapons rect
+        rope_rect     = (0, 0, rope.shape[1], rope.shape[0])
+        wrench_rect   = (0, 0, wrench.shape[1], wrench.shape[0])
+        revolver_rect = (0, 0, revolver.shape[1], revolver.shape[0])
 
-                w, h = getsize(self.frame)
-                vis = np.zeros((h, w, 3), np.uint8)
+        # Add characters to plan
+        self.tracker.add_target(plum, plum_rect, "plum")
+        self.tracker.add_target(mustard, mustard_rect, "mustard")
+        self.tracker.add_target(peacock, peacock_rect, "peacock")
+        self.tracker.add_target(scarlet, scarlet_rect, "scarlet")
 
-                vis[:h,:w] = self.frame
+        # Add weapons to plan
+        self.tracker.add_target(rope, rope_rect, "rope")
+        self.tracker.add_target(wrench, wrench_rect, "rrench")
+        self.tracker.add_target(revolver, revolver_rect, "revolver")
 
-                tracked = self.tracker.track(self.frame)
+    # Check image
+    def checkImage(self, img):
 
-                if len(tracked) > 0:
+        tracked = self.tracker.track(img)
 
-                        for tracked_ob in tracked:
+        if len(tracked) > 0:
 
-                            print ('Found ' + tracked_ob.target.data)
-                            # Calculate Homography
-                            h, status = cv2.findHomography(tracked_ob.p0, tracked_ob.p1)
+                for tracked_ob in tracked:
 
-                cv2.imshow('plane', vis)
+                    print ('Found ' + tracked_ob.target.data)
 
-                ch = cv2.waitKey(1)
-                if ch == 27:
-                    break
+                    # Homography info
+                    h, status = cv2.findHomography(tracked_ob.p0, tracked_ob.p1)
+        else:
+            print ('Nothing Found')
 
 if __name__ == '__main__':
     print(__doc__)
 
-    import sys
-    try:
-        video_src = sys.argv[1]
-
-    except:
-        video_src = 0
-
-    App(video_src).run()
+    image = cv2.imread('mustard.png')
+    App().checkImage()
