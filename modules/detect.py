@@ -17,7 +17,7 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 
 # Helper functions
-from helpers import blur, greyscale, threshold, morph, canny
+from helpers import blur, greyscale, threshold, morph, canny, quaternion_to_euler
 
 """
     The class functionality is to
@@ -58,22 +58,27 @@ class Detect:
     # Marker callaback
     def marker(self, data):
 
-        # Check if marker detected
-        if not data.markers:
-            # Spin robot as to find a marker
-            self.velocity.angular.z = 0.2
-            print("Finding markers ...")
+        # # Check if marker detected
+        # if not data.markers:
+        #     # Spin robot as to find a marker
+        #     self.velocity.angular.z = 0.2
+        #     print("Finding markers ...")
+        #
+        # elif data.markers and not self.centered:
+        #     # Center image and stop spinning
+        #     self.velocity.angular.z = 0
+        #     self.center(self.cv_image)
+        #
+        #
+        # else:
+        #     self.velocity.angular.z = 0
+        #     print("Processed finished")
+        #
+        # self.velocity_pub.publish(self.velocity)
 
-        elif data.markers and not self.centered:
+        if data.markers:
             # Center image and stop spinning
-            self.velocity.angular.z = 0
-            self.center(self.cv_image)
-
-        else:
-            self.velocity.angular.z = 0
-            print("Processed finished")
-
-        self.velocity_pub.publish(self.velocity)
+            quaternion_to_euler()
 
     # Converts image into MAT format
     def convert(self, data):

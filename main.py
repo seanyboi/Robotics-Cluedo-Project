@@ -7,7 +7,7 @@ import rospy
 import sys
 
 # Vision classes
-from vision import Detect
+from modules import Detect
 
 # Main
 def main(args):
