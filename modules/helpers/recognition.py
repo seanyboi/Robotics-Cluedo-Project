@@ -25,10 +25,13 @@ import numpy as np
 import cv2
 import os
 
-# local modules
-from helpers import getsize, draw_keypoints, PlaneTracker
+# modules
+import video
+import common
+from common import getsize, draw_keypoints
+from plane_tracker import PlaneTracker
 
-class App:
+class Recognition:
 
     # Constructor
     def __init__(self):
@@ -84,15 +87,10 @@ class App:
 
                 for tracked_ob in tracked:
 
-                    print ('Found ' + tracked_ob.target.data)
+                    return tracked_ob.target.data
 
                     # Homography info
-                    h, status = cv2.findHomography(tracked_ob.p0, tracked_ob.p1)
+                    # h, status = cv2.findHomography(tracked_ob.p0, tracked_ob.p1)
         else:
-            print ('Nothing Found')
 
-if __name__ == '__main__':
-    print(__doc__)
-
-    image = cv2.imread('image45.png')
-    App().checkImage(image)
+            return None
