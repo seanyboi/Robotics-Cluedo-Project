@@ -7,7 +7,7 @@ import rospy
 import sys
 
 # Vision classes
-from modules import Detection
+from modules import Vision
 
 # Main
 def main(args):
@@ -15,7 +15,8 @@ def main(args):
     # Initialise node
     rospy.init_node('detection', anonymous=True)
 
-    detector = Detection()
+    # Vision
+    Vision()
 
     try:
         # Asking tf to find the transform of child_frame in parent_frame.

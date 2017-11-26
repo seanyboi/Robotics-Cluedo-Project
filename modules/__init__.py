@@ -1,4 +1,4 @@
 #!/usr/bin/env python
 
 # Export files
-from detection import Detection
+from vision import Vision

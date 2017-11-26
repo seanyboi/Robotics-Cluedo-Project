@@ -23,7 +23,7 @@ from ar_track_alvar_msgs.msg import AlvarMarkers
 # Routines
 from helpers import blur, greyscale, threshold, morph, canny, GoToPose, Recognition
 
-class Detection:
+class Vision:
 
     # Constructor
     def __init__(self):
@@ -63,6 +63,55 @@ class Detection:
 
         # Velocity publisher
         self.velocity_pub = rospy.Publisher('mobile_base/commands/velocity', Twist, queue_size = 10)
+
+    # Marker callaback
+    def get_pose(self, data):
+
+        if data.markers and not self.ar_positioning:
+
+            # Stop marker data flow
+            self.ar_positioning = True
+
+            # Get ar marker tranformation matrix (respect to the map)
+            time.sleep(3)
+            (trans, rotation) = self.tf_listener.lookupTransform('/map', '/ar_marker_0', rospy.Time(0))
+
+            # Build rotation matrix
+            matrix = self.tf_listener.fromTranslationRotation(trans, rotation)
+
+            # Get z column in the matrix
+            direction = matrix[:3 , 2]
+
+            # Compute desired point (in front of ar_marker)
+            pose = trans + direction * 0.5
+
+            # Get desired robot rotation
+            theta = math.atan2(pose[1], pose[0])
+
+            # Build desired pose
+            x, y = pose[0], pose[1]
+            position = {'x': x, 'y' : y}
+            quaternion = {'r1' : 0.000, 'r2' : 0.000, 'r3' : np.sin(theta/2.0), 'r4' : np.cos(theta/2.0)}
+
+            # Send robot to pose
+            rospy.loginfo("Go to (%s, %s) pose", position['x'], position['y'])
+            success = self.gotopose.goto(position, quaternion)
+
+            if success:
+
+                rospy.loginfo("Given map position reached")
+
+                # Start image processing
+                self.img_processing = True
+
+            else:
+                rospy.loginfo("Failure in reaching given position")
+
+                # Try new positioning
+                self.ar_positioning = False
+
+            # Sleep to give the last log messages time to be sent
+            rospy.sleep(1)
 
     # Converts image into MAT format
     def recognise(self, data):
@@ -130,90 +179,37 @@ class Detection:
                     self.velocity.angular.z = 0
                     self.img_centered = True
 
-                    # Recognise image
+                    # Run image recognition
                     res = self.recognition.track(image)
 
-                    # Save image under detections
-                    cv2.imwrite(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'data/detections/%(res)s.png' % locals())), image)
+                    # Check recognition result
+                    # if negative adjust robot
+                    # position and try again
+                    if res is not None:
 
-                    try:
-                        # Collect tf data
-                        time.sleep(3)
+                        print("Image found and saved")
 
-                        # Write to file (position of the image)
-                        file = open(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'data/poses.txt')), "w")
-                        file.write('%(res)s: ' % locals() + str(self.tf_listener.lookupTransform('/map', '/ar_marker_0', rospy.Time(0))[0]))
-                        file.close()
+                        # Save image under detections
+                        cv2.imwrite(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'data/detections/%(res)s.png' % locals())), image)
 
-                    except Exception as e:
-                        print("Error while writing image pose: ", e)
+                        try:
+                            # Collect tf data
+                            time.sleep(3)
+
+                            # Write to file (position of the image)
+                            file = open(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'data/poses.txt')), "w")
+                            file.write('%(res)s: ' % locals() + str(self.tf_listener.lookupTransform('/map', '/ar_marker_0', rospy.Time(0))[0]))
+                            file.close()
+
+                        except Exception as e:
+                            print("Error while writing image pose: ", e)
+
+                    # else:
+
+
 
                 # Publish velocity
                 self.velocity_pub.publish(self.velocity)
 
             except Exception as CvBridgeError:
                 print('Error during image conversion: ', CvBridgeError)
-
-    # Marker callaback
-    def get_pose(self, data):
-
-        if data.markers and not self.ar_positioning:
-
-            # Stop marker data flow
-            self.ar_positioning = True
-
-            # Get ar marker tranformation matrix (respect to the map)
-            time.sleep(3)
-            (trans, rotation) = self.tf_listener.lookupTransform('/map', '/ar_marker_0', rospy.Time(0))
-
-            # Build rotation matrix
-            matrix = self.tf_listener.fromTranslationRotation(trans, rotation)
-
-            # Get z column in the matrix
-            direction = matrix[:2 , 2]
-
-            # Compute desired point (in front of ar_marker)
-            pose = trans[:2] + direction * 0.5
-
-            # Get desired robot rotation
-            theta = math.atan2(pose[1], pose[0])
-
-            print("Pose: ", pose)
-            print("Theta: ", theta)
-
-            # Build desired pose
-            x, y = pose[0], pose[1]
-            position = {'x': x, 'y' : y}
-            quaternion = {'r1' : 0.000, 'r2' : 0.000, 'r3' : np.sin(theta/2.0), 'r4' : np.cos(theta/2.0)}
-
-            print("Position: ", position)
-            print("Quaternion: ", quaternion)
-
-            # Send robot to pose
-            rospy.loginfo("Go to (%s, %s) pose", position['x'], position['y'])
-            success = self.gotopose.goto(position, quaternion)
-
-            if success:
-
-                # # Rotate robot for 60 degrees right
-                # self.velocity.angular.z = -math.radians(70)
-                # start_time = time.time()
-                # for x in range(30):
-                #     print("rotating")
-                #     if (time.time() - start_time < 1):
-                #         self.velocity_pub.publish(self.velocity)
-                #     self.rate.sleep()
-
-                rospy.loginfo("Given map position reached")
-
-                # Start image processing
-                self.img_processing = True
-
-            else:
-                rospy.loginfo("Failure in reaching given position")
-
-                # Try new positioning
-                self.ar_positioning = False
-
-            # Sleep to give the last log messages time to be sent
-            rospy.sleep(1)
