@@ -4,4 +4,4 @@
 from position import Position
 from navigation import Navigation
 from recognition import Recognition
-from go_to_pose import GoToPose
+from gotopose import GoToPose

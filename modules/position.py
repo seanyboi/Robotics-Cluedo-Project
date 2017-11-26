@@ -15,18 +15,17 @@ import os
 import numpy as np
 
 # Messages
-from sensor_msgs.msg import Image
 from geometry_msgs.msg import Twist, Vector3
 from cv_bridge import CvBridge, CvBridgeError
-from ar_track_alvar_msgs.msg import AlvarMarkers
 
 # Routines
-from helpers import blur, greyscale, threshold, morph, canny, GoToPose, Recognition
+from gotopose import GoToPose
+from helpers import blur, greyscale, threshold, morph, canny
 
 class Position:
 
-    # Constructor
     def __init__(self):
+        """ Class constructor """
 
         # Camera size
         self.x = 640
@@ -40,27 +39,24 @@ class Position:
 
         # Flags
         self.img_centered = False
-        self.ar_positioning = False
-        self.img_processing = False
+        self.ar_positioned = False
 
         # Rate
         self.rate = rospy.Rate(10)
 
-        
+        # Mobile base velocity publisher
+        self.velocity_pub = rospy.Publisher('mobile_base/commands/velocity', Twist, queue_size = 10)
 
-    # Marker callaback
-    def get_pose(self, data):
+    # Get in front of the AR
+    def toAR(self, raw_image):
 
-        if data.markers and not self.ar_positioning:
-
-            # Stop marker data flow
-            self.ar_positioning = True
+        if not self.ar_positioned:
 
             # Get ar marker tranformation matrix (respect to the map)
-            time.sleep(3)
-            (trans, rotation) = self.tf_listener.lookupTransform('/map', '/ar_marker_0', rospy.Time(0))
+            rospy.sleep(3)
+            (trans, rotation) = get_ar_transform()
 
-            # Build rotation matrix
+            # Get rotation matrix
             matrix = self.tf_listener.fromTranslationRotation(trans, rotation)
 
             # Get z column in the matrix
@@ -81,12 +77,17 @@ class Position:
             rospy.loginfo("Go to (%s, %s) pose", position['x'], position['y'])
             success = self.gotopose.goto(position, quaternion)
 
-            if success:
+            if success and get_ar_transform()[0]:
 
                 rospy.loginfo("Given map position reached")
 
-                # Start image processing
-                self.img_processing = True
+                # Start image centering
+                self.ar_positioned = True
+                center_image(img_data)
+
+            elif success and not get_ar_transform()[0]:
+
+                rospy.loginfo("Given map position reached but AR marker offset... Starting recover procedure")
 
             else:
                 rospy.loginfo("Failure in reaching given position")
@@ -97,103 +98,77 @@ class Position:
             # Sleep to give the last log messages time to be sent
             rospy.sleep(1)
 
-    # Converts image into MAT format
-    def recognise(self, data):
+    def center_image(self, raw_image):
 
-        if self.img_processing and not self.img_centered:
+        try:
+            # RGB raw image to OpenCV bgr MAT format
+            image = self.bridge.imgmsg_to_cv2(raw_image, 'bgr8')
 
-            try:
-                # RGB raw image to OpenCV bgr MAT format
-                image = self.bridge.imgmsg_to_cv2(data, 'bgr8')
+            # Apply convolutional kernel to smooth image
+            blurred = blur(image)
 
-                # Apply convolutional kernel to smooth image
-                blurred = blur(image)
+            # Convert image to greyscale
+            grey = greyscale(blurred)
 
-                # Convert image to greyscale
-                grey = greyscale(blurred)
+            # Apply adaptive thresholding
+            thresh = threshold(grey)
 
-                # Apply adaptive thresholding
-                thresh = threshold(grey)
+            # # Show image
+            # cv2.namedWindow('Thresholded Image')
+            # cv2.imshow('Thresholded Image', thresh)
+            # cv2.waitKey(5)
 
-                # Show image
-                cv2.namedWindow('Thresholded Image')
-                cv2.imshow('Thresholded Image', thresh)
-                cv2.waitKey(5)
+            # Canny edge detector
+            edges = canny(thresh)
 
-                # Canny edge detector
-                edges = canny(thresh)
+            # # Show image
+            # cv2.namedWindow('Canny')
+            # cv2.imshow('Canny', edges)
+            # cv2.waitKey(5)
 
-                # Show image
-                cv2.namedWindow('Canny')
-                cv2.imshow('Canny', edges)
-                cv2.waitKey(5)
+            # Find the contours
+            (contours, _) = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-                # Find the contours
-                (contours, _) = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            # Compute areas for contours found
+            cnt_areas = [cv2.contourArea(contours[n]) for n in range(len(contours))]
 
-                # Compute areas for contours found
-                cnt_areas = [cv2.contourArea(contours[n]) for n in range(len(contours))]
+            # Get biggest contour index
+            maxCnt_index = cnt_areas.index(max(cnt_areas))
 
-                # Get biggest contour index
-                maxCnt_index = cnt_areas.index(max(cnt_areas))
+            # Draw contours
+            cv2.drawContours(image, contours, maxCnt_index, (0,255,0), 3)
 
-                # Draw contours
-                cv2.drawContours(image, contours, maxCnt_index, (0,255,0), 3)
+            # Show image
+            cv2.namedWindow('Contours')
+            cv2.imshow('Contours', image)
+            cv2.waitKey(5)
 
-                # Show image
-                cv2.namedWindow('Contours')
-                cv2.imshow('Contours', image)
-                cv2.waitKey(5)
+            # Contour pose (for centering purposes)
+            M = cv2.moments(contours[maxCnt_index])
+            max_cnt_x = int(M['m10']/M['m00'])
+            max_cnt_y = int(M['m01']/M['m00'])
 
-                # Contour pose (for centering purposes)
-                M = cv2.moments(contours[maxCnt_index])
-                max_cnt_x = int(M['m10']/M['m00'])
-                max_cnt_y = int(M['m01']/M['m00'])
+            # Centre image within the frame
+            if self.x - max_cnt_x > 330:
+                self.velocity.angular.z = 0.2
 
-                # Centre image within the frame
-                if self.x - max_cnt_x > 330:
-                    self.velocity.angular.z = 0.2
+            elif self.x - max_cnt_x < 300:
+                self.velocity.angular.z = -0.2
 
-                elif self.x - max_cnt_x < 300:
-                    self.velocity.angular.z = -0.2
+            else:
 
-                else:
+                # Stop rotation (centering completed)
+                self.velocity.angular.z = 0
+                self.img_centered = True
 
-                    # Stop rotation (centering completed)
-                    self.velocity.angular.z = 0
-                    self.img_centered = True
+            # Publish velocity
+            self.velocity_pub.publish(self.velocity)
 
-                    # Run image recognition
-                    res = self.recognition.track(image)
+        except Exception as CvBridgeError:
+            print('Error during image conversion: ', CvBridgeError)
 
-                    # Check recognition result
-                    # if negative adjust robot
-                    # position and try again
-                    if res is not None:
+    def get_ar_transform(self):
+        return self.tf_listener.lookupTransform('/map', '/ar_marker_0', rospy.Time(0))
 
-                        print("Image found and saved")
-
-                        # Save image under detections
-                        cv2.imwrite(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'data/detections/%(res)s.png' % locals())), image)
-
-                        try:
-                            # Collect tf data
-                            time.sleep(3)
-
-                            # Write to file (position of the image)
-                            file = open(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'data/poses.txt')), "w")
-                            file.write('%(res)s: ' % locals() + str(self.tf_listener.lookupTransform('/map', '/ar_marker_0', rospy.Time(0))[0]))
-                            file.close()
-
-                        except Exception as e:
-                            print("Error while writing image pose: ", e)
-
-                    # else:
-
-
-
-                # Publish velocity
-                self.velocity_pub.publish(self.velocity)
-
-            except Exception as CvBridgeError:
-                print('Error during image conversion: ', CvBridgeError)
+    def is_positioned_completed(self):
+        return self.ar_positioned and self.img_centered

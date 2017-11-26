@@ -10,6 +10,7 @@ import rospy
 import sys
 
 # Ar-marker message data type
+from sensor_msgs.msg import Image
 from ar_track_alvar_msgs.msg import AlvarMarkers
 
 # Logic blocks
@@ -35,12 +36,11 @@ class RoboticsCluedo:
         self.navigation = Navigation()
         self.recognition = Recognition()
 
-        # Marker & Image subscriber, Velocity publisher
-        self.image_raw = rospy.Subscriber('camera/rgb/image_raw', Image, self.recognise)
-        self.ar_tracker = rospy.Subscriber('ar_pose_marker', AlvarMarkers, self.get_pose)
-        self.velocity_pub = rospy.Publisher('mobile_base/commands/velocity', Twist, queue_size = 10)
+        # Marker & Image subscribers
+        self.image_raw = rospy.Subscriber('camera/rgb/image_raw', Image, self.get_raw_image)
+        self.ar_tracker = rospy.Subscriber('ar_pose_marker', AlvarMarkers, self.get_ar_data)
 
-    def center(self):
+    def send(self):
         """
             The following routine instructs the robot
             to position itself in a precise location
@@ -57,7 +57,7 @@ class RoboticsCluedo:
         rospy.loginfo("Robot reached the center of the room")
 
         # Allow logic to be run
-        initialised = True
+        self.initialised = True
 
     def logic(self, data):
         """
@@ -81,6 +81,32 @@ class RoboticsCluedo:
                 # TODO: Insert navigation logic
                 rospy.loginfo("Robot is scanning the room")
 
+    def get_ar_data(self, data):
+        """
+            Getter function that returns
+            the ar-marker incoming data.
+
+            Arguments:
+                param1: Ar-marker data
+
+            Returns:
+                Ar-marker data
+        """
+        return data
+
+    def get_raw_image(self, data):
+        """
+            Getter function that returns
+            the raw image data.
+
+            Arguments:
+                param1: Raw image data
+
+            Returns:
+                Raw image data
+        """
+        return data
+
 def main(args):
 
     # Initialise node
@@ -97,7 +123,7 @@ def main(args):
         # Center the robot
         # in the map
         if firstTime:
-            rc.center()
+            rc.send()
             firstTime = False
 
         # Instruct the robot
