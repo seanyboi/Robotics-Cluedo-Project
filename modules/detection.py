@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+"""
+    TODO: Docs
+"""
+
 # ROS and OpenCV packages
 from __future__ import division
 import cv2
@@ -10,7 +14,7 @@ import tf
 import os
 import numpy as np
 
-# Topics messages types
+# Messages
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import Twist, Vector3
 from cv_bridge import CvBridge, CvBridgeError
@@ -19,12 +23,6 @@ from ar_track_alvar_msgs.msg import AlvarMarkers
 # Routines
 from helpers import blur, greyscale, threshold, morph, canny, GoToPose, Recognition
 
-"""
-    The class functionality is to
-    detect where the pose of the
-    image is and take a snaphot of
-    it.
-"""
 class Detection:
 
     # Constructor
@@ -33,19 +31,29 @@ class Detection:
         # OpenCV interface
         self.bridge = CvBridge()
 
-        # Base velocity
+        # Velocity message
         self.velocity = Twist()
 
-        # Flags
-        self.positioned = False
-        self.img_recognition = False
+        # Tf object (transforms)
+        self.tf_listener = tf.TransformListener()
 
-        # Image frame
+        # Flags
+        self.img_centered = False
+        self.ar_positioning = False
+        self.img_processing = False
+
+        # Camera frame
         self.x = 640
         self.y = 480
 
         # Rate
         self.rate = rospy.Rate(10)
+
+        # Recognition instance
+        self.recognition = Recognition()
+
+        # GoToPose instance
+        self.gotopose = GoToPose()
 
         # AR marker listener
         self.ar_tracker = rospy.Subscriber('ar_pose_marker', AlvarMarkers, self.get_pose)
@@ -59,18 +67,11 @@ class Detection:
     # Converts image into MAT format
     def recognise(self, data):
 
-        if self.img_recognition:
+        if self.img_processing and not self.img_centered:
 
             try:
                 # RGB raw image to OpenCV bgr MAT format
                 image = self.bridge.imgmsg_to_cv2(data, 'bgr8')
-
-                # Show image
-                cv2.namedWindow('Real Time')
-                cv2.imshow('Real Time', image)
-                cv2.waitKey(5)
-
-                print("Centering in process")
 
                 # Apply convolutional kernel to smooth image
                 blurred = blur(image)
@@ -103,11 +104,12 @@ class Detection:
                 # Get biggest contour index
                 maxCnt_index = cnt_areas.index(max(cnt_areas))
 
+                # Draw contours
                 cv2.drawContours(image, contours, maxCnt_index, (0,255,0), 3)
 
                 # Show image
-                cv2.namedWindow('Contour')
-                cv2.imshow('Contour', image)
+                cv2.namedWindow('Contours')
+                cv2.imshow('Contours', image)
                 cv2.waitKey(5)
 
                 # Contour pose (for centering purposes)
@@ -126,31 +128,25 @@ class Detection:
 
                     # Stop rotation (centering completed)
                     self.velocity.angular.z = 0
+                    self.img_centered = True
 
-                    # # Recognise image
-                    # tbr = cv2.imread(os.path.join(os.path.dirname( __file__ ), '..', 'data/detections/image.png'))
-                    # if Recognition().checkImage(tbr):
-                    #     print("Found: ", Recognition().checkImage(tbr))
-                    #     self.img_recognition = False
-                    #
-                    # else:
-                    #     print("Found nothing.")
+                    # Recognise image
+                    res = self.recognition.track(image)
 
-                    # Take a snapshot of the centered image
-                    cv2.imwrite(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'data/detections/image.png')), image)
+                    # Save image under detections
+                    cv2.imwrite(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'data/detections/%(res)s.png' % locals())), image)
 
-                    # # tf listener
-                    # listener = tf.TransformListener()
-                    # time.sleep(3)
+                    try:
+                        # Collect tf data
+                        time.sleep(3)
 
-                    # # Write image position
-                    # try:
-                    #     file = open(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'data/poses.txt')), "w")
-                    #     file.write(str(listener.lookupTransform('/map', '/ar_marker_0', rospy.Time(0))[0]))
-                    #     file.close()
-                    #
-                    # except Exception as e:
-                    #     print("Error while writing image pose: ", e)
+                        # Write to file (position of the image)
+                        file = open(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'data/poses.txt')), "w")
+                        file.write('%(res)s: ' % locals() + str(self.tf_listener.lookupTransform('/map', '/ar_marker_0', rospy.Time(0))[0]))
+                        file.close()
+
+                    except Exception as e:
+                        print("Error while writing image pose: ", e)
 
                 # Publish velocity
                 self.velocity_pub.publish(self.velocity)
@@ -161,43 +157,23 @@ class Detection:
     # Marker callaback
     def get_pose(self, data):
 
-        # Check if marker detected
-        # if not data.markers:
-        #     # Spin robot as to find a marker
-        #     self.velocity.angular.z = 0.2
-        #     print("Finding markers ...")
-        #
-        # elif data.markers and not self.centered:
-        #     # Center image and stop spinning
-        #     self.velocity.angular.z = 0
-        #     self.center(self.cv_image)
-        #
-        # else:
-        #     self.velocity.angular.z = 0
-        #     print("Processed finished")
-        #
-        # self.velocity_pub.publish(self.velocity)
-
-        if data.markers and not self.positioned:
+        if data.markers and not self.ar_positioning:
 
             # Stop marker data flow
-            self.positioned = True
-
-            # tf listener
-            listener = tf.TransformListener()
-            time.sleep(3)
+            self.ar_positioning = True
 
             # Get ar marker tranformation matrix (respect to the map)
-            (trans, rotation) = listener.lookupTransform('/map', '/ar_marker_0', rospy.Time(0))
+            time.sleep(3)
+            (trans, rotation) = self.tf_listener.lookupTransform('/map', '/ar_marker_0', rospy.Time(0))
 
-            # Build translation rotation matrix
-            matrix = listener.fromTranslationRotation(trans, rotation)
+            # Build rotation matrix
+            matrix = self.tf_listener.fromTranslationRotation(trans, rotation)
 
             # Get z column in the matrix
             direction = matrix[:2 , 2]
 
             # Compute desired point (in front of ar_marker)
-            pose = trans[:2] + direction * 0.4
+            pose = trans[:2] + direction * 0.5
 
             # Get desired robot rotation
             theta = math.atan2(pose[1], pose[0])
@@ -206,7 +182,7 @@ class Detection:
             print("Theta: ", theta)
 
             # Build desired pose
-            x, y, z = pose[0], pose[1], theta
+            x, y = pose[0], pose[1]
             position = {'x': x, 'y' : y}
             quaternion = {'r1' : 0.000, 'r2' : 0.000, 'r3' : np.sin(theta/2.0), 'r4' : np.cos(theta/2.0)}
 
@@ -215,12 +191,9 @@ class Detection:
 
             # Send robot to pose
             rospy.loginfo("Go to (%s, %s) pose", position['x'], position['y'])
-            success = GoToPose().goto(position, quaternion)
+            success = self.gotopose.goto(position, quaternion)
 
             if success:
-
-                # Stop marker positioning
-                self.positioned = True
 
                 # # Rotate robot for 60 degrees right
                 # self.velocity.angular.z = -math.radians(70)
@@ -233,14 +206,14 @@ class Detection:
 
                 rospy.loginfo("Given map position reached")
 
-                # Start image recognition
-                self.img_recognition = True
+                # Start image processing
+                self.img_processing = True
 
             else:
                 rospy.loginfo("Failure in reaching given position")
 
                 # Try new positioning
-                self.positioned = False
+                self.ar_positioning = False
 
             # Sleep to give the last log messages time to be sent
             rospy.sleep(1)

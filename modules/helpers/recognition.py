@@ -26,9 +26,6 @@ import cv2
 import os
 
 # modules
-import video
-import common
-from common import getsize, draw_keypoints
 from plane_tracker import PlaneTracker
 
 class Recognition:
@@ -46,15 +43,15 @@ class Recognition:
     def setTracker(self):
 
         # Load characters
-        plum    = cv2.imread(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'data/images/plum.png')))
-        mustard = cv2.imread(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'data/images/mustard.png')))
-        peacock = cv2.imread(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'data/images/peacock.png')))
-        scarlet = cv2.imread(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'data/images/scarlet.png')))
+        plum    = cv2.imread(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', '..', 'data/images/plum.png')))
+        mustard = cv2.imread(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', '..', 'data/images/mustard.png')))
+        peacock = cv2.imread(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', '..', 'data/images/peacock.png')))
+        scarlet = cv2.imread(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', '..', 'data/images/scarlet.png')))
 
         # Load weapons
-        rope     = cv2.imread(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'data/images/rope.png')))
-        wrench   = cv2.imread(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'data/images/wrench.png')))
-        revolver = cv2.imread(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'data/images/revolver.png')))
+        rope     = cv2.imread(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', '..', 'data/images/rope.png')))
+        wrench   = cv2.imread(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', '..', 'data/images/wrench.png')))
+        revolver = cv2.imread(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', '..', 'data/images/revolver.png')))
 
         # Characters rect
         plum_rect    = (0, 0, plum.shape[1], plum.shape[0])
@@ -78,19 +75,16 @@ class Recognition:
         self.tracker.add_target(wrench, wrench_rect, "rrench")
         self.tracker.add_target(revolver, revolver_rect, "revolver")
 
-    # Check image
-    def checkImage(self, img):
+    # Run recognition
+    def track(self, img):
 
         tracked = self.tracker.track(img)
 
         if len(tracked) > 0:
+            for tracked_ob in tracked:
+                return tracked_ob.target.data
 
-                for tracked_ob in tracked:
-
-                    return tracked_ob.target.data
-
-                    # Homography info
-                    # h, status = cv2.findHomography(tracked_ob.p0, tracked_ob.p1)
+                # Homography info
+                # h, status = cv2.findHomography(tracked_ob.p0, tracked_ob.p1)
         else:
-
             return None

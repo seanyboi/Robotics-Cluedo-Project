@@ -35,10 +35,6 @@ import cv2
 # built-in modules
 from collections import namedtuple
 
-# local modules
-import video
-import common
-
 
 FLANN_INDEX_KDTREE = 1
 FLANN_INDEX_LSH    = 6
@@ -136,53 +132,3 @@ class PlaneTracker:
         if descrs is None:  # detectAndCompute returns descs=None if not keypoints found
             descrs = []
         return keypoints, descrs
-
-class App:
-    def __init__(self, src):
-        self.cap = video.create_capture(src)
-        self.frame = None
-        self.paused = False
-        self.tracker = PlaneTracker()
-
-        cv2.namedWindow('plane')
-        self.rect_sel = common.RectSelector('plane', self.on_rect)
-
-    def on_rect(self, rect):
-        self.tracker.add_target(self.frame, rect)
-
-    def run(self):
-        while True:
-            playing = not self.paused and not self.rect_sel.dragging
-            if playing or self.frame is None:
-                ret, frame = self.cap.read()
-                if not ret:
-                    break
-                self.frame = frame.copy()
-
-            vis = self.frame.copy()
-            if playing:
-                tracked = self.tracker.track(self.frame)
-                for tr in tracked:
-                    cv2.polylines(vis, [np.int32(tr.quad)], True, (255, 255, 255), 2)
-                    for (x, y) in np.int32(tr.p1):
-                        cv2.circle(vis, (x, y), 2, (255, 255, 255))
-
-            self.rect_sel.draw(vis)
-            cv2.imshow('plane', vis)
-            ch = cv2.waitKey(1) & 0xFF
-            if ch == ord(' '):
-                self.paused = not self.paused
-            if ch == ord('c'):
-                self.tracker.clear()
-            if ch == 27:
-                break
-
-if __name__ == '__main__':
-    print(__doc__)
-
-    import sys
-    try:
-        video_src = sys.argv[1]
-    except:
-        video_src = 0
-    App(video_src).run()
