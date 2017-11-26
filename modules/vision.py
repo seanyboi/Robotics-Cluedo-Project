@@ -83,7 +83,7 @@ class Vision:
             direction = matrix[:3 , 2]
 
             # Compute desired point (in front of ar_marker)
-            pose = trans + direction * 0.5
+            pose = trans + direction * 0.4
 
             # Get desired robot rotation
             theta = math.atan2(pose[1], pose[0])
