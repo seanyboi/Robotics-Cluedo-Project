@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-    TODO: Docs
+    Position.
 """
 
 # ROS and OpenCV packages
@@ -23,18 +23,19 @@ from ar_track_alvar_msgs.msg import AlvarMarkers
 # Routines
 from helpers import blur, greyscale, threshold, morph, canny, GoToPose, Recognition
 
-class Vision:
+class Position:
 
     # Constructor
     def __init__(self):
 
-        # OpenCV interface
-        self.bridge = CvBridge()
+        # Camera size
+        self.x = 640
+        self.y = 480
 
-        # Velocity message
+        # Object instances
         self.velocity = Twist()
-
-        # Tf object (transforms)
+        self.bridge = CvBridge()
+        self.gotopose = GoToPose()
         self.tf_listener = tf.TransformListener()
 
         # Flags
@@ -42,27 +43,10 @@ class Vision:
         self.ar_positioning = False
         self.img_processing = False
 
-        # Camera frame
-        self.x = 640
-        self.y = 480
-
         # Rate
         self.rate = rospy.Rate(10)
 
-        # Recognition instance
-        self.recognition = Recognition()
-
-        # GoToPose instance
-        self.gotopose = GoToPose()
-
-        # AR marker listener
-        self.ar_tracker = rospy.Subscriber('ar_pose_marker', AlvarMarkers, self.get_pose)
-
-        # RGB image subscriber
-        self.image_raw = rospy.Subscriber('camera/rgb/image_raw', Image, self.recognise)
-
-        # Velocity publisher
-        self.velocity_pub = rospy.Publisher('mobile_base/commands/velocity', Twist, queue_size = 10)
+        
 
     # Marker callaback
     def get_pose(self, data):
