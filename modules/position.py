@@ -62,8 +62,14 @@ class Position:
         # Compute desired point (in front of ar_marker)
         pose = trans + direction * 0.5
 
+        # Flip direction
+        theta_direction = direction * -1
+
+        # Normalise theta_direction
+        theta_direction_norm = theta_direction / (theta_direction[0] ** 2 + theta_direction[1] ** 2) ** 0.5
+
         # Get desired robot rotation
-        theta = math.atan2(pose[1], pose[0])
+        theta = math.atan2(theta_direction_norm[1], theta_direction_norm[0])
 
         # Send robot to pose
         success = self.gtp.goto(pose[0], pose[1], theta)
