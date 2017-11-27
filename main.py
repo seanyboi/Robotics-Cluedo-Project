@@ -30,6 +30,9 @@ class RoboticsCluedo:
         self.process = True
         self.initialised = False
 
+        # Ar-marker and Raw image data
+        self.img_raw = None
+
         # Object instances
         self.gtp = GoToPose()
         self.pst = Position()
@@ -37,14 +40,14 @@ class RoboticsCluedo:
         self.rcg = Recognition()
 
         # Marker & Image subscribers
-        self.image_raw = rospy.Subscriber('camera/rgb/image_raw', Image, self.get_raw_image)
-        self.ar_tracker = rospy.Subscriber('ar_pose_marker', AlvarMarkers, self.get_ar_data)
+        self.image_raw = rospy.Subscriber('camera/rgb/image_raw', Image, self.set_raw_image)
+        self.ar_tracker = rospy.Subscriber('ar_pose_marker', AlvarMarkers, self.logic)
 
-    def send(self, x, y):
+    def run(self):
         """
             The following routine instructs the robot
             to position itself in a precise location
-            in the map.
+            in the map and starts the logic afterwards.
 
             Arguments:
                 param1: The x coordinate in the map
@@ -59,7 +62,7 @@ class RoboticsCluedo:
         # Allow logic to be run
         self.initialised = True
 
-    def logic(self, data):
+    def logic(self,data):
         """
             The function handles the logic of the robot,
             deciding when to navigate by scanning the wall,
@@ -68,25 +71,28 @@ class RoboticsCluedo:
             Arguments:
                 param1: The incoming data of the ar-marker
         """
+        print("Logic is running")
 
-        if initialised:
+        if self.initialised:
 
             # Run vision logic
             if data.markers and self.process:
 
+                rospy.loginfo("Processing in progress...")
+
                 while not self.rcg.is_recognised():
 
                     if not self.pst.ar_in_position():
-                        self.pst.toAR()
                         rospy.loginfo("AR positioning...")
+                        self.pst.toAR()
 
-                    elif self.pst.ar_in_position() and not self.pst.img_centered():
-                        self.pst.center_image(get_raw_image())
+                    elif self.pst.ar_in_position and not self.pst.img_centered:
                         rospy.loginfo("Image centering...")
+                        self.pst.center_image(self.get_raw_image())
 
-                    elif self.pst.ar_in_position() and self.pst.img_centered():
-                        self.rcg.recognise(get_raw_image())
+                    elif self.pst.ar_in_position and self.pst.img_centered:
                         rospy.loginfo("Recognition...")
+                        self.rcg.recognise(self.get_raw_image())
 
                     # Send log messages
                     rospy.sleep(1)
@@ -98,55 +104,36 @@ class RoboticsCluedo:
                 # TODO: Insert navigation logic
                 rospy.loginfo("Robot is scanning the room")
 
-    def get_ar_data(self, data):
+    def set_raw_image(self, data):
         """
-            Getter function that returns
-            the ar-marker incoming data.
-
-            Arguments:
-                param1: Ar-marker data
-
-            Returns:
-                Ar-marker data
-        """
-        return data
-
-    def get_raw_image(self, data):
-        """
-            Getter function that returns
-            the raw image data.
+            Setter function.
 
             Arguments:
                 param1: Raw image data
-
-            Returns:
-                Raw image data
         """
-        return data
+        self.img_raw = data
+
+    def get_raw_image(self):
+        """
+            Setter function.
+
+            Arguments:
+                param1: Raw image data
+        """
+        return self.img_raw
 
 def main(args):
 
     # Initialise node
     rospy.init_node('robotics_cluedo', anonymous=True)
 
-    # Flag
-    firstTime = True
-
     # Application instance
     rc = RoboticsCluedo()
 
     try:
 
-        # Center the robot
-        # in the map
-        if firstTime:
-            rc.send(x, y)
-            firstTime = False
-
-        # Instruct the robot
-        # on what to do
-        else:
-            rc.logic()
+        # Run the game
+        rc.run()
 
         # Spin it baby !
         rospy.spin()

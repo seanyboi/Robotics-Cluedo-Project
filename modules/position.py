@@ -20,7 +20,7 @@ from cv_bridge import CvBridge, CvBridgeError
 
 # Routines
 from gotopose import GoToPose
-from helpers import blur, greyscale, threshold, morph, canny
+from helpers import blur, greyscale, threshold, morph, canny, toMAT
 
 class Position:
 
@@ -51,7 +51,7 @@ class Position:
     def toAR(self):
 
         # Get ar marker tranformation matrix (respect to the map)
-        (trans, rotation) = get_ar_transform()
+        (trans, rotation) = self.get_ar_transform()
 
         # Get rotation matrix
         matrix = self.tf_listener.fromTranslationRotation(trans, rotation)
@@ -60,16 +60,15 @@ class Position:
         direction = matrix[:3 , 2]
 
         # Compute desired point (in front of ar_marker)
-        pose = trans + direction * 0.4
+        pose = trans + direction * 0.5
 
         # Get desired robot rotation
         theta = math.atan2(pose[1], pose[0])
 
         # Send robot to pose
-        rospy.loginfo("Go to (%s, %s) pose", position['x'], position['y'])
         success = self.gtp.goto(pose[0], pose[1], theta)
 
-        if success and get_ar_transform()[0]:
+        if success and self.get_ar_transform()[0]:
 
             rospy.loginfo("Given map position reached")
 
@@ -80,8 +79,11 @@ class Position:
 
             rospy.loginfo("Given map position reached but AR marker offset... Starting recover procedure")
 
+            # Send log messages
+            rospy.sleep(1)
+
             # Rotate robot and check for AR marker
-            while not rospy.is_shutdown() and not get_ar_transform()[0]:
+            while not rospy.is_shutdown():
 
                 # Rotation
                 self.velocity.linear.x = 0
@@ -91,6 +93,9 @@ class Position:
                 for x in range(30):
                     pub.publish(desired_velocity)
                     self.rate.sleep()
+
+                if get_ar_transform()[0]:
+                    break
 
             rospy.loginfo("Successful recovering !")
 
@@ -108,71 +113,70 @@ class Position:
 
     def center_image(self, raw_image):
 
-        try:
-            # RGB raw image to OpenCV bgr MAT format
-            image = self.bridge.imgmsg_to_cv2(raw_image, 'bgr8')
+        # RGB raw image to OpenCV bgr MAT format
+        image = toMAT(raw_image)
 
-            # Apply convolutional kernel to smooth image
-            blurred = blur(image)
+        # Apply convolutional kernel to smooth image
+        blurred = blur(image)
 
-            # Convert image to greyscale
-            grey = greyscale(blurred)
+        # Convert image to greyscale
+        grey = greyscale(blurred)
 
-            # Apply adaptive thresholding
-            thresh = threshold(grey)
+        # Apply adaptive thresholding
+        thresh = threshold(grey)
 
-            # # Show image
-            # cv2.namedWindow('Thresholded Image')
-            # cv2.imshow('Thresholded Image', thresh)
-            # cv2.waitKey(5)
+        # # Show image
+        # cv2.namedWindow('Thresholded Image')
+        # cv2.imshow('Thresholded Image', thresh)
+        # cv2.waitKey(5)
 
-            # Canny edge detector
-            edges = canny(thresh)
+        # Canny edge detector
+        edges = canny(thresh)
 
-            # # Show image
-            # cv2.namedWindow('Canny')
-            # cv2.imshow('Canny', edges)
-            # cv2.waitKey(5)
+        # # Show image
+        # cv2.namedWindow('Canny')
+        # cv2.imshow('Canny', edges)
+        # cv2.waitKey(5)
 
-            # Find the contours
-            (contours, _) = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        # Find the contours
+        (contours, _) = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-            # Compute areas for contours found
-            cnt_areas = [cv2.contourArea(contours[n]) for n in range(len(contours))]
+        # Compute areas for contours found
+        cnt_areas = [cv2.contourArea(contours[n]) for n in range(len(contours))]
 
-            # Get biggest contour index
-            maxCnt_index = cnt_areas.index(max(cnt_areas))
+        # Get biggest contour index
+        maxCnt_index = cnt_areas.index(max(cnt_areas))
 
-            # Draw contours
-            cv2.drawContours(image, contours, maxCnt_index, (0,255,0), 3)
+        # Draw contours
+        cv2.drawContours(image, contours, maxCnt_index, (0,255,0), 3)
 
-            # Show image
-            cv2.namedWindow('Contours')
-            cv2.imshow('Contours', image)
-            cv2.waitKey(5)
+        # Show image
+        cv2.namedWindow('Contours')
+        cv2.imshow('Contours', image)
+        cv2.waitKey(5)
 
-            # Contour pose (for centering purposes)
-            M = cv2.moments(contours[maxCnt_index])
-            max_cnt_x = int(M['m10']/M['m00'])
-            max_cnt_y = int(M['m01']/M['m00'])
+        # Contour pose (for centering purposes)
+        M = cv2.moments(contours[maxCnt_index])
+        max_cnt_x = int(M['m10']/M['m00'])
+        max_cnt_y = int(M['m01']/M['m00'])
 
-            # Centre image within the frame
-            if self.x - max_cnt_x > 330:
-                self.velocity.angular.z = 0.2
+        # Centre image within the frame
+        if self.x - max_cnt_x > 340:
+            self.velocity.angular.z = 0.2
 
-            elif self.x - max_cnt_x < 300:
-                self.velocity.angular.z = -0.2
+        elif self.x - max_cnt_x < 280:
+            self.velocity.angular.z = -0.2
 
-            else:
-                # Stop rotation (centering completed)
-                self.velocity.angular.z = 0
-                self.img_centered = True
+        else:
+            # Stop rotation (centering completed)
+            self.velocity.angular.z = 0
+            self.img_centered = True
 
-            # Publish velocity
-            self.velocity_pub.publish(self.velocity)
+            # Return image for recognition
+            return image
 
-        except Exception as CvBridgeError:
-            print('Error during image conversion: ', CvBridgeError)
+        # Publish velocity
+        self.velocity_pub.publish(self.velocity)
 
     def get_ar_transform(self):
         rospy.sleep(3)

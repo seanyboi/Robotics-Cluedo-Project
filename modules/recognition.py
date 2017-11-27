@@ -8,14 +8,6 @@ Example of using features2d framework for video homography matching.
 ORB features and FLANN matcher are used. The actual tracking is implemented by
 PlaneTracker class in plane_tracker.py
 
-Inspired by http://www.youtube.com/watch?v=-ZNYoL8rzPY
-
-video: http://www.youtube.com/watch?v=FirtmYcC0Vc
-
-Usage
------
-feature_homography_from_file1.py [<video source>]
-
 '''
 
 # Python 2/3 compatibility
@@ -24,9 +16,11 @@ from __future__ import print_function
 import numpy as np
 import cv2
 import os
+import tf
+import rospy
 
 # modules
-from plane_tracker import PlaneTracker
+from helpers import PlaneTracker, toMAT
 
 class Recognition:
 
@@ -35,6 +29,9 @@ class Recognition:
 
         # Flag
         self.recognised = False
+
+        # Tf object
+        self.tf_listener = tf.TransformListener()
 
         # PlaneTracker object
         self.tracker = PlaneTracker()
@@ -72,49 +69,46 @@ class Recognition:
         self.tracker.add_target(wrench, wrench_rect, "rrench")
         self.tracker.add_target(revolver, revolver_rect, "revolver")
 
-    # Run recognition
-    def run(self, img):
+    # Converts image into MAT format
+    def recognise(self, raw_image):
 
-        # Find recognised object
+        # Homography info
+        # h, status = cv2.findHomography(tracked_ob.p0, tracked_ob.p1)
+
+        # RGB raw image to OpenCV bgr MAT format
+        img = toMAT(raw_image)
+
         tracked = self.tracker.track(img)
 
-        # Send recognition result
         if len(tracked) > 0:
-            for tracked_ob in tracked:
-                return tracked_ob.target.data
-
-                # Homography info
-                # h, status = cv2.findHomography(tracked_ob.p0, tracked_ob.p1)
-        else:
-            return None
-
-    # Converts image into MAT format
-    def recognise(self, data):
-
-        # Run image recognition
-        res = self.recognition.track(image)
-
-        # Check recognition result
-        # if negative adjust robot
-        # position and try again
-        if res is not None:
 
             print("Image found and saved")
 
-            # Save image under detections
-            cv2.imwrite(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'data/detections/%(res)s.png' % locals())), image)
+            for tracked_ob in tracked:
 
-            try:
-                # Collect tf data
-                time.sleep(3)
+                res = tracked_ob.target.data
+                print("Found: ", res)
 
-                # Write to file (position of the image)
-                file = open(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'data/poses.txt')), "w")
-                file.write('%(res)s: ' % locals() + str(self.tf_listener.lookupTransform('/map', '/ar_marker_0', rospy.Time(0))[0]))
-                file.close()
+                try:
 
-            except Exception as e:
-                print("Error while writing image pose: ", e)
+                    # Save image under detections
+                    cv2.imwrite(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'data/detections/%(res)s.png' % locals())), img)
+
+                    # Collect tf data
+                    rospy.sleep(3)
+
+                    # Write to file (position of the image)
+                    file = open(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'data/poses.txt')), "w")
+                    file.write('%(res)s: ' % locals() + str(self.tf_listener.lookupTransform('/map', '/ar_marker_0', rospy.Time(0))[0]))
+                    file.close()
+
+                    self.recognised = True
+
+                except Exception as e:
+                    print("Error while writing image pose: ", e)
+
+        else:
+            print("Image not found")
 
     def is_recognised(self):
         return self.recognised

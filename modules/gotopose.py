@@ -49,6 +49,8 @@ class GoToPose():
         pos = {'x': x, 'y' : y}
         quat = {'r1' : 0.000, 'r2' : 0.000, 'r3' : np.sin(theta/2.0), 'r4' : np.cos(theta/2.0)}
 
+        rospy.loginfo("Go to (%s, %s) pose", pos['x'], pos['y'])
+
         # Send a goal
         self.goal_sent = True
         goal = MoveBaseGoal()

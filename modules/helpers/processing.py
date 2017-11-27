@@ -4,6 +4,8 @@
 from __future__ import division
 import cv2
 
+from cv_bridge import CvBridge, CvBridgeError
+
 # Blur the image
 def blur(img):
     return cv2.medianBlur(img, 5)
@@ -23,3 +25,15 @@ def morph(img):
 # Canny edge detector
 def canny(img):
     return cv2.Canny(img, 100, 200)
+
+# Raw to OpenCV conversion
+def toMAT(raw_image):
+    try:
+        # RGB raw image to OpenCV bgr MAT format
+        cv_image = CvBridge().imgmsg_to_cv2(raw_image, 'bgr8')
+
+        # Return OpenCV version
+        return cv_image
+
+    except Exception as CvBridgeError:
+        print('Error during image conversion: ', CvBridgeError)
