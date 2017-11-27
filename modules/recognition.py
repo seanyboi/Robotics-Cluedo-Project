@@ -33,6 +33,9 @@ class Recognition:
     # Constructor
     def __init__(self):
 
+        # Flag
+        self.recognised = False
+
         # PlaneTracker object
         self.tracker = PlaneTracker()
 
@@ -112,3 +115,6 @@ class Recognition:
 
             except Exception as e:
                 print("Error while writing image pose: ", e)
+
+    def is_recognised(self):
+        return self.recognised

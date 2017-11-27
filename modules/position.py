@@ -34,7 +34,7 @@ class Position:
         # Object instances
         self.velocity = Twist()
         self.bridge = CvBridge()
-        self.gotopose = GoToPose()
+        self.gtp = GoToPose()
         self.tf_listener = tf.TransformListener()
 
         # Flags
@@ -48,55 +48,63 @@ class Position:
         self.velocity_pub = rospy.Publisher('mobile_base/commands/velocity', Twist, queue_size = 10)
 
     # Get in front of the AR
-    def toAR(self, raw_image):
+    def toAR(self):
 
-        if not self.ar_positioned:
+        # Get ar marker tranformation matrix (respect to the map)
+        (trans, rotation) = get_ar_transform()
 
-            # Get ar marker tranformation matrix (respect to the map)
-            rospy.sleep(3)
-            (trans, rotation) = get_ar_transform()
+        # Get rotation matrix
+        matrix = self.tf_listener.fromTranslationRotation(trans, rotation)
 
-            # Get rotation matrix
-            matrix = self.tf_listener.fromTranslationRotation(trans, rotation)
+        # Get z column in the matrix
+        direction = matrix[:3 , 2]
 
-            # Get z column in the matrix
-            direction = matrix[:3 , 2]
+        # Compute desired point (in front of ar_marker)
+        pose = trans + direction * 0.4
 
-            # Compute desired point (in front of ar_marker)
-            pose = trans + direction * 0.4
+        # Get desired robot rotation
+        theta = math.atan2(pose[1], pose[0])
 
-            # Get desired robot rotation
-            theta = math.atan2(pose[1], pose[0])
+        # Send robot to pose
+        rospy.loginfo("Go to (%s, %s) pose", position['x'], position['y'])
+        success = self.gtp.goto(pose[0], pose[1], theta)
 
-            # Build desired pose
-            x, y = pose[0], pose[1]
-            position = {'x': x, 'y' : y}
-            quaternion = {'r1' : 0.000, 'r2' : 0.000, 'r3' : np.sin(theta/2.0), 'r4' : np.cos(theta/2.0)}
+        if success and get_ar_transform()[0]:
 
-            # Send robot to pose
-            rospy.loginfo("Go to (%s, %s) pose", position['x'], position['y'])
-            success = self.gotopose.goto(position, quaternion)
+            rospy.loginfo("Given map position reached")
 
-            if success and get_ar_transform()[0]:
+            # Start image centering
+            self.ar_positioned = True
 
-                rospy.loginfo("Given map position reached")
+        elif success and not get_ar_transform()[0]:
 
-                # Start image centering
-                self.ar_positioned = True
-                center_image(img_data)
+            rospy.loginfo("Given map position reached but AR marker offset... Starting recover procedure")
 
-            elif success and not get_ar_transform()[0]:
+            # Rotate robot and check for AR marker
+            while not rospy.is_shutdown() and not get_ar_transform()[0]:
 
-                rospy.loginfo("Given map position reached but AR marker offset... Starting recover procedure")
+                # Rotation
+                self.velocity.linear.x = 0
+                self.velocity.angular.z = getRadians(15)
 
-            else:
-                rospy.loginfo("Failure in reaching given position")
+                # Rotate
+                for x in range(30):
+                    pub.publish(desired_velocity)
+                    self.rate.sleep()
 
-                # Try new positioning
-                self.ar_positioning = False
+            rospy.loginfo("Successful recovering !")
 
-            # Sleep to give the last log messages time to be sent
-            rospy.sleep(1)
+            # Start image centering
+            self.ar_positioned = True
+
+        else:
+            rospy.loginfo("Failure in reaching given position")
+
+            # Try new positioning
+            self.ar_positioned = False
+
+        # Send log messages
+        rospy.sleep(1)
 
     def center_image(self, raw_image):
 
@@ -156,7 +164,6 @@ class Position:
                 self.velocity.angular.z = -0.2
 
             else:
-
                 # Stop rotation (centering completed)
                 self.velocity.angular.z = 0
                 self.img_centered = True
@@ -168,7 +175,11 @@ class Position:
             print('Error during image conversion: ', CvBridgeError)
 
     def get_ar_transform(self):
+        rospy.sleep(3)
         return self.tf_listener.lookupTransform('/map', '/ar_marker_0', rospy.Time(0))
 
-    def is_positioned_completed(self):
-        return self.ar_positioned and self.img_centered
+    def ar_in_position(self):
+        return self.ar_positioned
+
+    def is_img_centered(self):
+        return self.img_centered

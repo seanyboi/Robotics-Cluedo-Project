@@ -31,16 +31,16 @@ class RoboticsCluedo:
         self.initialised = False
 
         # Object instances
-        self.gotopose = GoToPose()
-        self.position = Position()
-        self.navigation = Navigation()
-        self.recognition = Recognition()
+        self.gtp = GoToPose()
+        self.pst = Position()
+        self.nvg = Navigation()
+        self.rcg = Recognition()
 
         # Marker & Image subscribers
         self.image_raw = rospy.Subscriber('camera/rgb/image_raw', Image, self.get_raw_image)
         self.ar_tracker = rospy.Subscriber('ar_pose_marker', AlvarMarkers, self.get_ar_data)
 
-    def send(self):
+    def send(self, x, y):
         """
             The following routine instructs the robot
             to position itself in a precise location
@@ -54,7 +54,7 @@ class RoboticsCluedo:
                 bool: True or False (indicating success or failure)
         """
         # TODO: run GoToPose method
-        rospy.loginfo("Robot reached the center of the room")
+        rospy.loginfo("Robot reached the given position")
 
         # Allow logic to be run
         self.initialised = True
@@ -73,8 +73,25 @@ class RoboticsCluedo:
 
             # Run vision logic
             if data.markers and self.process:
-                # TODO: Insert vision logic
-                rospy.loginfo("Robot is running vision logic")
+
+                while not self.rcg.is_recognised():
+
+                    if not self.pst.ar_in_position():
+                        self.pst.toAR()
+                        rospy.loginfo("AR positioning...")
+
+                    elif self.pst.ar_in_position() and not self.pst.img_centered():
+                        self.pst.center_image(get_raw_image())
+                        rospy.loginfo("Image centering...")
+
+                    elif self.pst.ar_in_position() and self.pst.img_centered():
+                        self.rcg.recognise(get_raw_image())
+                        rospy.loginfo("Recognition...")
+
+                    # Send log messages
+                    rospy.sleep(1)
+
+                self.process = False
 
             # Navigate the map
             else:
@@ -123,7 +140,7 @@ def main(args):
         # Center the robot
         # in the map
         if firstTime:
-            rc.send()
+            rc.send(x, y)
             firstTime = False
 
         # Instruct the robot

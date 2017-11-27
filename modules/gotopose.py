@@ -43,7 +43,11 @@ class GoToPose():
     	# Allow up to 5 seconds for the action server to come up
     	self.move_base.wait_for_server(rospy.Duration(5))
 
-    def goto(self, pos, quat):
+    def goto(self, x, y, theta):
+
+        # Build desired pose
+        pos = {'x': x, 'y' : y}
+        quat = {'r1' : 0.000, 'r2' : 0.000, 'r3' : np.sin(theta/2.0), 'r4' : np.cos(theta/2.0)}
 
         # Send a goal
         self.goal_sent = True
@@ -57,7 +61,7 @@ class GoToPose():
         self.move_base.send_goal(goal)
 
     	# Allow TurtleBot up to 60 seconds to complete task
-    	success = self.move_base.wait_for_result(rospy.Duration(60))
+    	success = self.move_base.wait_for_result(rospy.Duration(120))
 
         state = self.move_base.get_state()
         result = False
