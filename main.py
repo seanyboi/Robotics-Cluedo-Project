@@ -15,6 +15,7 @@ from sensor_msgs.msg import LaserScan
 from ar_track_alvar_msgs.msg import AlvarMarkers
 
 # Modules
+from kobuki_msgs.msg import BumperEvent
 from modules import Navigation, Position, Recognition, GoToPose
 
 class RoboticsCluedo:
@@ -33,6 +34,7 @@ class RoboticsCluedo:
         self.img_raw = None
         self.ar_data = None
         self.scan_data = None
+        self.bumper_data = None
 
         # Object instances
         self.gtp = GoToPose()
