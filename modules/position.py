@@ -32,9 +32,9 @@ class Position:
         self.y = 480
 
         # Object instances
+        self.gtp = GoToPose()
         self.velocity = Twist()
         self.bridge = CvBridge()
-        self.gtp = GoToPose()
         self.tf_listener = tf.TransformListener()
 
         # Flags
@@ -60,7 +60,7 @@ class Position:
         direction = matrix[:3 , 2]
 
         # Compute desired point (in front of ar_marker)
-        pose = trans + direction * 0.5
+        pose = trans + direction * 0.4
 
         # Flip direction
         theta_direction = direction * -1
@@ -131,18 +131,8 @@ class Position:
         # Apply adaptive thresholding
         thresh = threshold(grey)
 
-        # # Show image
-        # cv2.namedWindow('Thresholded Image')
-        # cv2.imshow('Thresholded Image', thresh)
-        # cv2.waitKey(5)
-
         # Canny edge detector
         edges = canny(thresh)
-
-        # # Show image
-        # cv2.namedWindow('Canny')
-        # cv2.imshow('Canny', edges)
-        # cv2.waitKey(5)
 
         # Find the contours
         (contours, _) = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -155,11 +145,6 @@ class Position:
 
         # Draw contours
         cv2.drawContours(image, contours, maxCnt_index, (0,255,0), 3)
-
-        # Show image
-        cv2.namedWindow('Contours')
-        cv2.imshow('Contours', image)
-        cv2.waitKey(5)
 
         # Contour pose (for centering purposes)
         M = cv2.moments(contours[maxCnt_index])
@@ -178,11 +163,11 @@ class Position:
             self.velocity.angular.z = 0
             self.img_centered = True
 
-            # Return image for recognition
-            return image
-
         # Publish velocity
         self.velocity_pub.publish(self.velocity)
+
+        # Return image for recognition
+        return image
 
     def get_ar_transform(self):
         rospy.sleep(3)
@@ -193,3 +178,9 @@ class Position:
 
     def is_img_centered(self):
         return self.img_centered
+
+    def reset_ar_flag(self):
+        self.ar_positioned = False
+
+    def reset_center_flag(self):
+        self.img_centered = False

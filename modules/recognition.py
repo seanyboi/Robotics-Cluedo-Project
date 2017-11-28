@@ -66,14 +66,11 @@ class Recognition:
 
         # Add weapons to plan tracker
         self.tracker.add_target(rope, rope_rect, "rope")
-        self.tracker.add_target(wrench, wrench_rect, "rrench")
+        self.tracker.add_target(wrench, wrench_rect, "wrench")
         self.tracker.add_target(revolver, revolver_rect, "revolver")
 
     # Converts image into MAT format
     def recognise(self, raw_image):
-
-        # Homography info
-        # h, status = cv2.findHomography(tracked_ob.p0, tracked_ob.p1)
 
         # RGB raw image to OpenCV bgr MAT format
         img = toMAT(raw_image)
@@ -104,6 +101,8 @@ class Recognition:
 
                     self.recognised = True
 
+                    return res
+
                 except Exception as e:
                     print("Error while writing image pose: ", e)
 
@@ -112,3 +111,6 @@ class Recognition:
 
     def is_recognised(self):
         return self.recognised
+
+    def reset_rec_flag(self):
+        self.recognised = False
