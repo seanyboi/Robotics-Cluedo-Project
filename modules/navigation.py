@@ -2,6 +2,12 @@
 
 """
     Navigation.
+
+    The class handles the navigation using
+    laserscans (to overcome obstacles). M-
+    oreover the navigation logic handles the
+    bumping as well in case the robot hits
+    the walls of obstacles
 """
 
 # ROS and OpenCV packages
@@ -9,6 +15,7 @@ from __future__ import division
 import rospy
 import time
 import math
+import random
 
 # Mobile base velocity message type
 from kobuki_msgs.msg import BumperEvent
@@ -28,7 +35,7 @@ class Navigation:
 
         self.rate = rospy.Rate(10)
 
-        self.threshold = 0.6
+        self.threshold = 0.8
 
         rospy.on_shutdown(self.shutdown)
 
@@ -42,14 +49,13 @@ class Navigation:
             Navigation logic based on LaserScan.
 
             Arguments:
-                LaserScan data
+                LaserScan data ranges
         """
-
         if self.get_bumper_state() is None:
 
             # Check if min threshold hit (laser scan)
             if all(math.isnan(float(str(item))) for item in ranges):
-                self.rotate(90)
+                self.rotate(self.get_angle())
 
             else:
 
@@ -73,49 +79,36 @@ class Navigation:
                 if (self.right > self.left) and self.mid > 0:
                     rospy.loginfo("Going left")
                     self.move_cmd.angular.z= 0.6
-                    self.move_cmd.linear.x= 0.1
+                    self.move_cmd.linear.x= 0.4
                     self.cmd_vel.publish(self.move_cmd)
 
                 elif (self.right > self.left) and self.mid == 0 and self.right > 40:
                     rospy.loginfo("Going left")
                     self.move_cmd.angular.z= 0.4
-                    self.move_cmd.linear.x= 0.1
+                    self.move_cmd.linear.x= 0.4
                     self.cmd_vel.publish(self.move_cmd)
 
                 elif (self.left >= self.right) and self.mid > 0:
                     rospy.loginfo("Going right")
                     self.move_cmd.angular.z= -0.6
-                    self.move_cmd.linear.x= 0.1
+                    self.move_cmd.linear.x= 0.4
                     self.cmd_vel.publish(self.move_cmd)
 
                 elif (self.left >= self.right) and self.mid == 0 and self.left > 40:
                     rospy.loginfo("Going right")
                     self.move_cmd.angular.z= -0.4
-                    self.move_cmd.linear.x= 0.1
+                    self.move_cmd.linear.x= 0.4
                     self.cmd_vel.publish(self.move_cmd)
-
-                # if (self.right == self.left) and self.mid > 0:
-                #     rospy.loginfo("Chosing right")
-                #     self.move_cmd.angular.z= -0.6
-                #     self.move_cmd.linear.x= 0.2
-                #     self.cmd_vel.publish(self.move_cmd)
 
                 elif self.mid == 0 and (self.right >= 0 or self.left >= 0):
                     rospy.loginfo("Going forward")
                     print("Moving forward")
                     self.move_cmd.angular.z = 0
-                    self.move_cmd.linear.x = 0.1
+                    self.move_cmd.linear.x = 0.5
                     self.cmd_vel.publish(self.move_cmd)
 
-                # if self.mid == 0 and self.right == 0 and self.left == 0:
-                #     rospy.loginfo("Rotating")
-                #     self.move_cmd.angular.z = 0.6
-                #     self.move_cmd.linear.x = 0
-                #     self.cmd_vel.publish(self.move_cmd)
-
-                self.right = 0
-                self.left = 0
-                self.mid = 0
+                # Clean counters
+                self.clean_counters()
 
         else:
 
@@ -126,16 +119,45 @@ class Navigation:
             self.move_cmd.angular.z = 0
             self.cmd_vel.publish(self.move_cmd)
 
+            # Sleep for commands actuation
+            rospy.sleep(1)
+
             # Rotate
-            self.rotate(90)
+            self.rotate(self.get_angle())
 
             # Clean bumper state
             self.bump_state = None
 
+            # Clean counters
+            self.clean_counters()
+
+    def get_angle(self):
+        """
+            Returns a random angle
+            used for bump rotation.
+
+            Returns:
+                int: angle (between 90 and 180 degrees)
+        """
+        return random.randint(90, 180)
+
+    def clean_counters(self):
+        """
+            Clean the laser scan ranges
+            values for new set of data.
+        """
+        self.mid = 0
+        self.left = 0
+        self.right = 0
+
     def rotate(self, deg):
+        """
+            Rotates the robot for a given
+            amount of degrees.
 
-        print("I am actually rotating...")
-
+            Arguments:
+                param1: The degree of rotation
+        """
         # Rotation
         self.move_cmd.linear.x = 0
         self.move_cmd.angular.z = -math.radians(int(deg)) if self.side else math.radians(int(deg))
@@ -150,12 +172,28 @@ class Navigation:
                 self.rate.sleep()
 
     def shutdown(self):
+        """
+            Shutdown function.
+        """
         rospy.loginfo("Stopping TurtleBot")
         self.cmd_vel.publish(Twist())
         rospy.sleep(1)
 
     def set_bumper_data(self, data):
+        """
+            Sets the bumper state to incoming
+            bumper data.
+
+            Arguments:
+                param1: Bumper data
+        """
         self.bump_state = data.state
 
     def get_bumper_state(self):
+        """
+            Returns the bumper state.
+
+            Returns:
+                int: bumper state
+        """
         return self.bump_state

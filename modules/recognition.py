@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 
 '''
-Feature homography
-==================
+    Object recognition.
 
-Example of using features2d framework for video homography matching.
-ORB features and FLANN matcher are used. The actual tracking is implemented by
-PlaneTracker class in plane_tracker.py
-
+    The class makes use of the PlaneTracker
+    to find features points (salient points)
+    and carry on the recognition of the image
+    given.
 '''
 
 # Python 2/3 compatibility
@@ -22,8 +21,8 @@ from helpers import PlaneTracker, toMAT
 
 class Recognition:
 
-    # Constructor
     def __init__(self):
+        """ Class constructor """
 
         # Flag
         self.recognised = False
@@ -64,8 +63,17 @@ class Recognition:
         self.tracker.add_target(wrench, wrench_rect, "wrench")
         self.tracker.add_target(revolver, revolver_rect, "revolver")
 
-    # Converts image into MAT format
     def recognise(self, raw_image):
+        """
+            Runs the PlaneTracker track
+            method to find the best match.
+
+            Arguments:
+                param1: RBG raw image
+
+            Returns:
+                string: The name of matched object
+        """
 
         # RGB raw image to OpenCV bgr MAT format
         img = toMAT(raw_image)
@@ -88,7 +96,20 @@ class Recognition:
             print("Image not found")
 
     def is_recognised(self):
+        """
+            Getter method used by the main
+            to check whether the image has
+            been recognised or not, to move
+            on to the next image.
+
+            Returns:
+                bool: True or False (recognised or not)
+        """
         return self.recognised
 
     def reset_rec_flag(self):
+        """
+            Resets recognies flag
+            for new search.
+        """
         self.recognised = False

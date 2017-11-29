@@ -2,15 +2,21 @@
 
 """
     Main.
+
+    Listens to in-coming data.
+    Handles the logic by calling the necessary
+    methods, including navigation and vision ones.
 """
 
 # Modules
+from __future__ import print_function
 from __future__ import division
 import rospy
 import sys
 import cv2
 import os
 import tf
+import random
 
 # Ar-marker message data type
 from sensor_msgs.msg import Image
@@ -50,7 +56,7 @@ class RoboticsCluedo:
         self.ar_tracker = rospy.Subscriber('ar_pose_marker', AlvarMarkers, self.set_ar_data)
         self.image_raw = rospy.Subscriber('camera/rgb/image_raw', Image, self.set_raw_image)
 
-    def run(self):
+    def run(self, x, y):
         """
             The routine instructs the robot to position
             itself in a precise location in the map and
@@ -60,8 +66,8 @@ class RoboticsCluedo:
                 param1: The x coordinate in the map
                 param2: The y coordinate in the map
         """
-        # TODO: run GoToPose method
-        rospy.loginfo("Robot reached the initial position")
+        # Send robot to pose
+        success = self.gtp.goto(x, y, 0)
 
         # Start logic
         self.logic()
@@ -88,8 +94,6 @@ class RoboticsCluedo:
 
                 while not self.rcg.is_recognised():
 
-                    print("Recog flag: ", self.rcg.is_recognised())
-
                     # Position in front of the AR
                     if not self.pst.ar_in_position():
                         rospy.loginfo("AR positioning...")
@@ -109,7 +113,6 @@ class RoboticsCluedo:
                             self.detections.append(res)
                             self.pose_and_snapshot(save_image, res)
 
-                print("WHILE LOOP BROKENNNNNNNNN !!!!!!!!!")
                 # Start new search
                 self.process = False
                 self.pst.reset_ar_flag()
@@ -118,19 +121,27 @@ class RoboticsCluedo:
 
             elif bool(data) and not self.process:
                 rospy.loginfo("Starting new search...")
-                self.nvg.rotate(90)
+                self.nvg.rotate(random.randint(90, 180))
                 self.process = True
 
             else:
-                print("Navigation..")
                 rospy.loginfo("Robot is scanning the room")
                 self.nvg.navigate(self.get_scan_data())
 
-            rospy.sleep(1)
-
-        rospy.loginfo("Mission accomplished !")
+        # Acknowledge task completition
+        rospy.loginfo("MISSION ACCOMPLISHED, HOUSTON !")
 
     def pose_and_snapshot(self, image, res):
+        """
+            Writes the pose of the image
+            to the poses.txt file and saves
+            the snapshot of the image in the
+            data folder.
+
+            Arguments:
+                param1: OpenCV type image
+                param2: Name of the detected image
+        """
         try:
             # Save image under detections
             cv2.imwrite(os.path.abspath(os.path.join(os.path.dirname( __file__ ), 'data/detections/%(res)s.png' % locals())), image)
@@ -162,7 +173,7 @@ class RoboticsCluedo:
             data to a global variable.
 
             Arguments:
-                param1: Ar-marker data
+                param1: LaserScan data
         """
         self.scan_data = data
 
@@ -178,31 +189,28 @@ class RoboticsCluedo:
 
     def get_raw_image(self):
         """
-            Returns the latest set
-            image data.
+            Returns the latest image data.
 
             Returns:
-                Last set image data (self.img_raw)
+                RGB raw image
         """
         return self.img_raw
 
     def get_scan_data(self):
         """
-            Returns the latest set
-            ar-marker data.
+            Returns the latest laserscan data.
 
             Returns:
-                Last set ar-marker data
+                LaserScan ranges
         """
         return self.scan_data.ranges
 
     def get_ar_data(self):
         """
-            Returns the latest set
-            ar-marker data.
+            Returns the latest ar-marker data.
 
             Returns:
-                Last set ar-marker data
+                coordinates of the ar-marker
         """
         return self.ar_data.markers
 
@@ -220,7 +228,7 @@ def main(args):
         rospy.sleep(3)
 
         # Run the logic
-        rc.run()
+        rc.run(-2.97, -0.080)
 
         # Spin it baby !
         rospy.spin()

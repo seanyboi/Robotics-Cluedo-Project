@@ -2,6 +2,11 @@
 
 """
     Position.
+
+    The class handles the ar-marker
+    approach as well as the image
+    centering process to carry on
+    the recognition afterwards.
 """
 
 # ROS and OpenCV packages
@@ -45,8 +50,12 @@ class Position:
         # Mobile base velocity publisher
         self.velocity_pub = rospy.Publisher('mobile_base/commands/velocity', Twist, queue_size = 10)
 
-    # Get in front of the AR
     def toAR(self):
+        """
+            Computes the x, y and theta
+            coordinates to position the
+            robot in front of the ar-marker.
+        """
 
         # Get ar marker tranformation matrix (respect to the map)
         (trans, rotation) = self.get_ar_transform()
@@ -72,6 +81,9 @@ class Position:
         # Send robot to pose
         success = self.gtp.goto(pose[0], pose[1], theta)
 
+        # Check if position reached and starts
+        # centering process by setting the ar
+        # flag to True
         if success and self.get_ar_transform()[0]:
 
             rospy.loginfo("Given map position reached")
@@ -79,6 +91,9 @@ class Position:
             # Start image centering
             self.ar_positioned = True
 
+        # Handles the unsuccess of the robot of not
+        # being able to face the ar marker precisely
+        # to carry on the recognition
         elif success and not get_ar_transform()[0]:
 
             rospy.loginfo("Given map position reached but AR marker offset... Starting recover procedure")
@@ -116,6 +131,13 @@ class Position:
         rospy.sleep(1)
 
     def center_image(self, raw_image):
+        """
+            Centers the image right in
+            center of the image frame.
+
+            Arguments:
+                image_raw: RGB raw image
+        """
 
         # RGB raw image to OpenCV bgr MAT format
         cv_image = toMAT(raw_image)
@@ -153,17 +175,44 @@ class Position:
         return cv_image
 
     def get_ar_transform(self):
+        """
+            Returns the ar-marker position
+            in relation to the map.
+
+            Returns:
+                list: trans and quaternion of the ar marker (in the map)
+        """
         rospy.sleep(3)
         return self.tf_listener.lookupTransform('/map', '/ar_marker_0', rospy.Time(0))
 
     def ar_in_position(self):
+        """
+            Returns the ar positioning process.
+
+            Returns:
+                bool: True or False (ar processing done or not)
+        """
         return self.ar_positioned
 
     def is_img_centered(self):
+        """
+            Returns the image centering process.
+
+            Returns:
+                bool: True or False (image processing done or not)
+        """
         return self.img_centered
 
     def reset_ar_flag(self):
+        """
+            Resets the ar_processing flag
+            for the new search.
+        """
         self.ar_positioned = False
 
     def reset_center_flag(self):
+        """
+            Resets the image_processing flag
+            for the new search.
+        """
         self.img_centered = False
