@@ -8,6 +8,9 @@
 from __future__ import division
 import rospy
 import sys
+import cv2
+import os
+import tf
 
 # Ar-marker message data type
 from sensor_msgs.msg import Image
@@ -45,7 +48,6 @@ class RoboticsCluedo:
         # Marker & Image subscribers
         self.sub = rospy.Subscriber('scan', LaserScan, self.set_scan_data)
         self.ar_tracker = rospy.Subscriber('ar_pose_marker', AlvarMarkers, self.set_ar_data)
-        # self.ar_tracker = rospy.Subscriber('ar_pose_marker', AlvarMarkers, self.debug)
         self.image_raw = rospy.Subscriber('camera/rgb/image_raw', Image, self.set_raw_image)
 
     def run(self):
@@ -61,14 +63,8 @@ class RoboticsCluedo:
         # TODO: run GoToPose method
         rospy.loginfo("Robot reached the initial position")
 
-        # Allow logic to be run
-        self.initialised = True
-
         # Start logic
         self.logic()
-
-    def debug(self, data):
-        print(data)
 
     def logic(self):
         """
@@ -79,60 +75,76 @@ class RoboticsCluedo:
             Arguments:
                 param1: The incoming data of the ar-marker
         """
+        while len(self.detections) < 2:
 
-        if self.initialised:
+            # Get latest data
+            data = self.get_ar_data()
 
-            while len(self.detections) < 2:
+            # Run vision logic
+            if bool(data) and self.process:
 
-                # Get latest data
-                data = self.get_ar_data()
-                print("Latest data")
+                # Image to be saved
+                save_image = None
 
-                # Run vision logic
-                if bool(data) and self.process:
+                while not self.rcg.is_recognised():
 
-                    while not self.rcg.is_recognised():
+                    print("Recog flag: ", self.rcg.is_recognised())
 
-                        print("Recog flag: ", self.rcg.is_recognised())
+                    # Position in front of the AR
+                    if not self.pst.ar_in_position():
+                        rospy.loginfo("AR positioning...")
+                        self.pst.toAR()
 
-                        # Position in front of the AR
-                        if not self.pst.ar_in_position():
-                            rospy.loginfo("AR positioning...")
-                            self.pst.toAR()
+                    # Center in front of the image
+                    elif self.pst.ar_in_position and not self.pst.img_centered:
+                        rospy.loginfo("Image centering...")
+                        save_image = self.pst.center_image(self.get_raw_image())
 
-                        # Center in front of the image
-                        elif self.pst.ar_in_position and not self.pst.img_centered:
-                            rospy.loginfo("Image centering...")
-                            self.pst.center_image(self.get_raw_image())
+                    # Recognise image
+                    elif self.pst.ar_in_position and self.pst.img_centered:
+                        rospy.loginfo("Recognition...")
+                        # Check if image recognised is already done
+                        res = self.rcg.recognise(self.get_raw_image())
+                        if res and res not in self.detections:
+                            self.detections.append(res)
+                            self.pose_and_snapshot(save_image, res)
 
-                        # Recognise image
-                        elif self.pst.ar_in_position and self.pst.img_centered:
-                            rospy.loginfo("Recognition...")
-                            # Store recognised image
-                            out = self.rcg.recognise(self.get_raw_image())
-                            if out not in self.detections:
-                                self.detections.append(out)
+                print("WHILE LOOP BROKENNNNNNNNN !!!!!!!!!")
+                # Start new search
+                self.process = False
+                self.pst.reset_ar_flag()
+                self.rcg.reset_rec_flag()
+                self.pst.reset_center_flag()
 
-                            # Start new search
-                            self.process = False
-                            self.rcg.reset_rec_flag()
-                            self.pst.reset_ar_flag()
-                            self.pst.reset_center_flag()
-                            break
+            elif bool(data) and not self.process:
+                rospy.loginfo("Starting new search...")
+                self.nvg.rotate(90)
+                self.process = True
 
-                elif bool(data) and not self.process:
-                    rospy.loginfo("Starting new search...")
-                    self.nvg.rotate(90)
-                    self.process = True
+            else:
+                print("Navigation..")
+                rospy.loginfo("Robot is scanning the room")
+                self.nvg.navigate(self.get_scan_data())
 
-                else:
-                    print("Navigation..")
-                    rospy.loginfo("Robot is scanning the room")
-                    self.nvg.navigate(self.get_scan_data())
+            rospy.sleep(1)
 
-                rospy.sleep(1)
+        rospy.loginfo("Mission accomplished !")
 
-            rospy.loginfo("Mission accomplished !")
+    def pose_and_snapshot(self, image, res):
+        try:
+            # Save image under detections
+            cv2.imwrite(os.path.abspath(os.path.join(os.path.dirname( __file__ ), 'data/detections/%(res)s.png' % locals())), image)
+
+            # Get ar pose
+            (trans, _) = self.pst.get_ar_transform()
+
+            # Write to file (position of the image)
+            file = open(os.path.abspath(os.path.join(os.path.dirname( __file__ ), 'data/poses.txt')), "a")
+            file.write('%(res)s: ' % locals() + str(trans))
+            file.close()
+
+        except Exception as e:
+            print("Error while writing image pose: ", e)
 
     def set_raw_image(self, data):
         """

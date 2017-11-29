@@ -16,8 +16,6 @@ from __future__ import print_function
 import numpy as np
 import cv2
 import os
-import tf
-import rospy
 
 # modules
 from helpers import PlaneTracker, toMAT
@@ -29,9 +27,6 @@ class Recognition:
 
         # Flag
         self.recognised = False
-
-        # Tf object
-        self.tf_listener = tf.TransformListener()
 
         # PlaneTracker object
         self.tracker = PlaneTracker()
@@ -85,28 +80,11 @@ class Recognition:
 
                 res = tracked_ob.target.data
                 print("Found: ", res)
-
-                try:
-
-                    # Save image under detections
-                    cv2.imwrite(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'data/detections/%(res)s.png' % locals())), img)
-
-                    # Collect tf data
-                    rospy.sleep(3)
-
-                    # Write to file (position of the image)
-                    file = open(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'data/poses.txt')), "w")
-                    file.write('%(res)s: ' % locals() + str(self.tf_listener.lookupTransform('/map', '/ar_marker_0', rospy.Time(0))[0]))
-                    file.close()
-
-                    self.recognised = True
-
-                    return res
-
-                except Exception as e:
-                    print("Error while writing image pose: ", e)
+                self.recognised = True
+                return res
 
         else:
+            return None
             print("Image not found")
 
     def is_recognised(self):

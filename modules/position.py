@@ -11,8 +11,6 @@ import rospy
 import time
 import math
 import tf
-import os
-import numpy as np
 
 # Messages
 from geometry_msgs.msg import Twist, Vector3
@@ -20,7 +18,7 @@ from cv_bridge import CvBridge, CvBridgeError
 
 # Routines
 from gotopose import GoToPose
-from helpers import blur, greyscale, threshold, morph, canny, toMAT
+from helpers import toMAT, img_processing, get_contour
 
 class Position:
 
@@ -120,31 +118,16 @@ class Position:
     def center_image(self, raw_image):
 
         # RGB raw image to OpenCV bgr MAT format
-        image = toMAT(raw_image)
+        cv_image = toMAT(raw_image)
 
-        # Apply convolutional kernel to smooth image
-        blurred = blur(image)
+        # Image processing
+        processed_img = img_processing(cv_image)
 
-        # Convert image to greyscale
-        grey = greyscale(blurred)
-
-        # Apply adaptive thresholding
-        thresh = threshold(grey)
-
-        # Canny edge detector
-        edges = canny(thresh)
-
-        # Find the contours
-        (contours, _) = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-        # Compute areas for contours found
-        cnt_areas = [cv2.contourArea(contours[n]) for n in range(len(contours))]
-
-        # Get biggest contour index
-        maxCnt_index = cnt_areas.index(max(cnt_areas))
+        # Get contours and max index
+        contours, maxCnt_index = get_contour(processed_img)
 
         # Draw contours
-        cv2.drawContours(image, contours, maxCnt_index, (0,255,0), 3)
+        cv2.drawContours(cv_image, contours, maxCnt_index, (0,255,0), 3)
 
         # Contour pose (for centering purposes)
         M = cv2.moments(contours[maxCnt_index])
@@ -167,7 +150,7 @@ class Position:
         self.velocity_pub.publish(self.velocity)
 
         # Return image for recognition
-        return image
+        return cv_image
 
     def get_ar_transform(self):
         rospy.sleep(3)

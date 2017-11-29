@@ -26,7 +26,7 @@ class Navigation:
         self.bump_state = None
         self.move_cmd = Twist()
 
-        self.rate = rospy.Rate(0.5)
+        self.rate = rospy.Rate(10)
 
         self.threshold = 0.6
 
@@ -141,7 +141,7 @@ class Navigation:
         # Time of rotation
         start_time = time.time()
 
-        for x in range(100):
+        for x in range(30):
             if (time.time() - start_time < 1):
                 self.cmd_vel.publish(self.move_cmd)
                 self.rate.sleep()
