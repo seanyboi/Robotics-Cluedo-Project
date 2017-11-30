@@ -83,39 +83,9 @@ class Position:
         # Check if position reached and starts
         # centering process by setting the ar
         # flag to True
-        if success and self.get_ar_transform()[0]:
+        if success:
 
             rospy.loginfo("Given map position reached")
-
-            # Start image centering
-            self.ar_positioned = True
-
-        # Handles the unsuccess of the robot of not
-        # being able to face the ar marker precisely
-        # to carry on the recognition
-        elif success and not get_ar_transform()[0]:
-
-            rospy.loginfo("Given map position reached but AR marker offset... Starting recover procedure")
-
-            # Send log messages
-            rospy.sleep(1)
-
-            # Rotate robot and check for AR marker
-            while not rospy.is_shutdown():
-
-                # Rotation
-                self.velocity.linear.x = 0
-                self.velocity.angular.z = getRadians(15)
-
-                # Rotate
-                for x in range(30):
-                    pub.publish(desired_velocity)
-                    self.rate.sleep()
-
-                if get_ar_transform()[0]:
-                    break
-
-            rospy.loginfo("Successful recovering !")
 
             # Start image centering
             self.ar_positioned = True
