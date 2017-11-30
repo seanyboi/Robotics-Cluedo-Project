@@ -67,10 +67,14 @@ class RoboticsCluedo:
                 param2: The y coordinate in the map
         """
         # Send robot to pose
-        success = self.gtp.goto(x, y, 0)
+        result = self.gtp.goto(x, y, 0)
 
-        # Start logic
-        self.logic()
+        if result:
+            # Start logic
+            print("Starting the logic....")
+            self.logic()
+        else:
+            print("Failed to go to inital pose...")
 
     def logic(self):
         """
