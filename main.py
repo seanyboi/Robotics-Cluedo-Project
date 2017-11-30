@@ -74,7 +74,8 @@ class RoboticsCluedo:
             print("Starting the logic....")
             self.logic()
         else:
-            print("Failed to go to inital pose...")
+            print("Failed to go to inital pose... Trying again")
+            self.run(x, y)
 
     def logic(self):
         """
@@ -226,6 +227,7 @@ def main(args):
         rc = RoboticsCluedo()
 
         # Warm-up sensors
+        rospy.loginfo("Warming up sensors...")
         rospy.sleep(3)
 
         # Run the logic
