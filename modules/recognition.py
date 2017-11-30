@@ -13,16 +13,21 @@
 from __future__ import print_function
 
 import numpy as np
+import rospy
 import cv2
 import os
 
 # modules
+from geometry_msgs.msg import Twist, Vector3
 from helpers import PlaneTracker, toMAT, temp_matching
 
 class Recognition:
 
     def __init__(self):
         """ Class constructor """
+
+        # Velocity object
+        self.velocity = Twist()
 
         # Flag
         self.recognised = False
@@ -63,6 +68,9 @@ class Recognition:
         self.tracker.add_target(wrench, wrench_rect, "wrench")
         self.tracker.add_target(revolver, revolver_rect, "revolver")
 
+        # Mobile base velocity publisher
+        self.velocity_pub = rospy.Publisher('mobile_base/commands/velocity', Twist, queue_size = 10)
+
     def recognise(self, raw_image):
         """
             Runs the PlaneTracker track
@@ -94,8 +102,15 @@ class Recognition:
                 return res, tmpmtch_save
 
         else:
-            return None
-            print("Image not found")
+            print("Image not detected, getting closer...")
+
+            # Get robot closer to image
+            self.velocity.angular.z = 0
+            self.velocity.linear.x = 0.05
+            self.velocity_pub.publish(self.velocity)
+
+            # Try recognition again
+            self.recognise(raw_image)
 
     def is_recognised(self):
         """

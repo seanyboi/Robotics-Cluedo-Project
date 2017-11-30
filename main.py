@@ -33,6 +33,7 @@ class RoboticsCluedo:
         """ Class constructor """
 
         # Detections array
+        self.poses = []
         self.detections = []
 
         # Flag
@@ -92,7 +93,7 @@ class RoboticsCluedo:
             data = self.get_ar_data()
 
             # Run vision logic
-            if bool(data) and self.process:
+            if bool(data) and self.process and not self.already_visited():
 
                 while not self.rcg.is_recognised():
 
@@ -158,6 +159,17 @@ class RoboticsCluedo:
 
         except Exception as e:
             print("Error while writing image pose: ", e)
+
+    def already_visited(self):
+
+        # Get ar-marker trans
+        (trans, _) = self.pst.get_ar_transform()
+
+        if len(self.poses):
+            for pose in self.poses:
+                return (trans[0] >= pose[0] + 0.3 or trans[0] <= pose[0] - 0.3) and (trans[1] >= pose[1] + 0.3 or trans[1] <= pose[1] - 0.3)
+        else:
+            return False
 
     def set_raw_image(self, data):
         """
@@ -230,8 +242,8 @@ def main(args):
         rospy.loginfo("Warming up sensors...")
         rospy.sleep(3)
 
-        # Run the logic
-        rc.run(-2.97, -0.080)
+        # Run the logic (arena2)
+        rc.run(1.54, -4.06)
 
         # Spin it baby !
         rospy.spin()
