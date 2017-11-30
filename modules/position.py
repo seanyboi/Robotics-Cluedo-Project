@@ -66,7 +66,7 @@ class Position:
         direction = matrix[:3 , 2]
 
         # Compute desired point (in front of ar_marker)
-        pose = trans + direction * 0.41
+        pose = trans + direction * 0.5
 
         # Flip direction
         theta_direction = direction * -1
@@ -148,7 +148,6 @@ class Position:
             Returns:
                 list: trans and quaternion of the ar marker (in the map)
         """
-        rospy.sleep(3)
         return self.tf_listener.lookupTransform('/map', '/ar_marker_0', rospy.Time(0))
 
     def ar_in_position(self):

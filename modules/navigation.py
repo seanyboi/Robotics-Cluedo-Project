@@ -35,7 +35,7 @@ class Navigation:
 
         self.rate = rospy.Rate(10)
 
-        self.threshold = 0.8
+        self.threshold = 1
 
         rospy.on_shutdown(self.shutdown)
 

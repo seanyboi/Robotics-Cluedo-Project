@@ -82,7 +82,8 @@ class Recognition:
             Returns:
                 string: The name of matched object
         """
-
+        print("Running recognition...")
+        
         # RGB raw image to OpenCV bgr MAT format
         img = toMAT(raw_image)
 
