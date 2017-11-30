@@ -56,7 +56,6 @@ class Position:
             coordinates to position the
             robot in front of the ar-marker.
         """
-
         # Get ar marker tranformation matrix (respect to the map)
         (trans, rotation) = self.get_ar_transform()
 
@@ -67,7 +66,7 @@ class Position:
         direction = matrix[:3 , 2]
 
         # Compute desired point (in front of ar_marker)
-        pose = trans + direction * 0.4
+        pose = trans + direction * 0.
 
         # Flip direction
         theta_direction = direction * -1
@@ -170,9 +169,6 @@ class Position:
 
         # Publish velocity
         self.velocity_pub.publish(self.velocity)
-
-        # Return image for recognition
-        return cv_image
 
     def get_ar_transform(self):
         """

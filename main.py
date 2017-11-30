@@ -89,9 +89,6 @@ class RoboticsCluedo:
             # Run vision logic
             if bool(data) and self.process:
 
-                # Image to be saved
-                save_image = None
-
                 while not self.rcg.is_recognised():
 
                     # Position in front of the AR
@@ -102,16 +99,16 @@ class RoboticsCluedo:
                     # Center in front of the image
                     elif self.pst.ar_in_position and not self.pst.img_centered:
                         rospy.loginfo("Image centering...")
-                        save_image = self.pst.center_image(self.get_raw_image())
+                        self.pst.center_image(self.get_raw_image())
 
                     # Recognise image
                     elif self.pst.ar_in_position and self.pst.img_centered:
                         rospy.loginfo("Recognition...")
                         # Check if image recognised is already done
-                        res = self.rcg.recognise(self.get_raw_image())
+                        (res, img_to_save) = self.rcg.recognise(self.get_raw_image())
                         if res and res not in self.detections:
                             self.detections.append(res)
-                            self.pose_and_snapshot(save_image, res)
+                            self.pose_and_snapshot(res, img_to_save)
 
                 # Start new search
                 self.process = False
@@ -131,7 +128,7 @@ class RoboticsCluedo:
         # Acknowledge task completition
         rospy.loginfo("MISSION ACCOMPLISHED, HOUSTON !")
 
-    def pose_and_snapshot(self, image, res):
+    def pose_and_snapshot(self, res, image):
         """
             Writes the pose of the image
             to the poses.txt file and saves

@@ -17,7 +17,7 @@ import cv2
 import os
 
 # modules
-from helpers import PlaneTracker, toMAT
+from helpers import PlaneTracker, toMAT, temp_matching
 
 class Recognition:
 
@@ -89,7 +89,9 @@ class Recognition:
                 res = tracked_ob.target.data
                 print("Found: ", res)
                 self.recognised = True
-                return res
+                tmpmtch_save = temp_matching(res, toMAT(raw_image))
+                print(res, tmpmtch_save.shape)
+                return res, tmpmtch_save
 
         else:
             return None

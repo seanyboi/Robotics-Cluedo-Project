@@ -79,32 +79,32 @@ class Navigation:
                 if (self.right > self.left) and self.mid > 0:
                     rospy.loginfo("Going left")
                     self.move_cmd.angular.z= 0.6
-                    self.move_cmd.linear.x= 0.4
+                    self.move_cmd.linear.x= 0.1
                     self.cmd_vel.publish(self.move_cmd)
 
                 elif (self.right > self.left) and self.mid == 0 and self.right > 40:
                     rospy.loginfo("Going left")
                     self.move_cmd.angular.z= 0.4
-                    self.move_cmd.linear.x= 0.4
+                    self.move_cmd.linear.x= 0.1
                     self.cmd_vel.publish(self.move_cmd)
 
                 elif (self.left >= self.right) and self.mid > 0:
                     rospy.loginfo("Going right")
                     self.move_cmd.angular.z= -0.6
-                    self.move_cmd.linear.x= 0.4
+                    self.move_cmd.linear.x= 0.1
                     self.cmd_vel.publish(self.move_cmd)
 
                 elif (self.left >= self.right) and self.mid == 0 and self.left > 40:
                     rospy.loginfo("Going right")
                     self.move_cmd.angular.z= -0.4
-                    self.move_cmd.linear.x= 0.4
+                    self.move_cmd.linear.x= 0.1
                     self.cmd_vel.publish(self.move_cmd)
 
                 elif self.mid == 0 and (self.right >= 0 or self.left >= 0):
                     rospy.loginfo("Going forward")
                     print("Moving forward")
                     self.move_cmd.angular.z = 0
-                    self.move_cmd.linear.x = 0.5
+                    self.move_cmd.linear.x = 0.1
                     self.cmd_vel.publish(self.move_cmd)
 
                 # Clean counters
@@ -139,7 +139,7 @@ class Navigation:
             Returns:
                 int: angle (between 90 and 180 degrees)
         """
-        return random.randint(90, 180)
+        return random.randint(45, 180)
 
     def clean_counters(self):
         """
@@ -160,7 +160,7 @@ class Navigation:
         """
         # Rotation
         self.move_cmd.linear.x = 0
-        self.move_cmd.angular.z = -math.radians(int(deg)) if self.side else math.radians(int(deg))
+        self.move_cmd.angular.z = -math.radians(int(deg)) if self.get_choice() else math.radians(int(deg))
         self.side = not self.side
 
         # Time of rotation
@@ -170,6 +170,16 @@ class Navigation:
             if (time.time() - start_time < 1):
                 self.cmd_vel.publish(self.move_cmd)
                 self.rate.sleep()
+
+    def get_choice(self):
+        """
+            Returns a random value for
+            a decision making.
+
+            Returns:
+                int: 0 or 1
+        """
+        return random.randint(0, 1)
 
     def shutdown(self):
         """
