@@ -68,15 +68,14 @@ class RoboticsCluedo:
                 param2: The y coordinate in the map
         """
         # Send robot to pose
-        result = self.gtp.goto(x, y, 0)
+        success = self.gtp.goto(x, y, 0)
 
-        if result:
+        if success:
             # Start logic
             print("Starting the logic....")
             self.logic()
         else:
-            print("Failed to go to inital pose... Trying again")
-            self.run(x, y)
+            print("Failed to go to inital pose... Robot is trying again")
 
     def logic(self):
         """
@@ -237,10 +236,6 @@ def main(args):
 
         # Application instance
         rc = RoboticsCluedo()
-
-        # Warm-up sensors
-        rospy.loginfo("Warming up sensors...")
-        rospy.sleep(3)
 
         # Run the logic (arena2)
         rc.run(1.54, -4.06)

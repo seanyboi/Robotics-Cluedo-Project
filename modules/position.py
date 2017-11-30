@@ -78,7 +78,7 @@ class Position:
         theta = math.atan2(theta_direction_norm[1], theta_direction_norm[0])
 
         # Send robot to pose
-        success = self.gtp.goto(pose[0], pose[1], theta)
+        success = self.gtp.goto(int(str(pose[0])[:5]), int(str(pose[1])[:5]), theta)
 
         # Check if position reached and starts
         # centering process by setting the ar
@@ -95,9 +95,6 @@ class Position:
 
             # Try new positioning
             self.ar_positioned = False
-
-        # Send log messages
-        rospy.sleep(1)
 
     def center_image(self, raw_image):
         """
@@ -148,7 +145,10 @@ class Position:
             Returns:
                 list: trans and quaternion of the ar marker (in the map)
         """
-        return self.tf_listener.lookupTransform('/map', '/ar_marker_0', rospy.Time(0))
+        try:
+            return self.tf_listener.lookupTransform('/map', '/ar_marker_0', rospy.Time(0))
+        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+            continue
 
     def ar_in_position(self):
         """
