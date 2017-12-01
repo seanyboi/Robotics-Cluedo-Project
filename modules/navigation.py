@@ -143,7 +143,7 @@ class Navigation:
             Returns:
                 int: angle (between 90 and 180 degrees)
         """
-        return random.randint(45, 180)
+        return random.randint(90, 180)
 
     def clean_counters(self):
         """

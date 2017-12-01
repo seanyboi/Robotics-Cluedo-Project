@@ -124,7 +124,7 @@ class RoboticsCluedo:
                             self.pose_and_snapshot(res, img_to_save)
                         else:
                             # Break the loop and carry on search
-                            self.counter = 3
+                            break
 
                 # Start new search
                 self.process = False
@@ -184,7 +184,7 @@ class RoboticsCluedo:
 
                 for pose in self.poses:
                     print("Pose: ", pose)
-                    res = ((self.abs(trans[0]) - self.abs(pose[0]) <= 0.4) and (self.abs(trans[1]) - self.abs(pose[1]) <= 0.4))
+                    res = ((self.abs(trans[0]) - self.abs(pose[0]) <= 0.5) and (self.abs(trans[1]) - self.abs(pose[1]) <= 0.5))
                     if res:
                         print("It has been visited already...")
                         return True
