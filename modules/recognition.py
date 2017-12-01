@@ -91,13 +91,13 @@ class Recognition:
         img = toMAT(raw_image)
 
         # Convert to grayscale
-        img_greyscale = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        # img_greyscale = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
         # Correct image exposure
-        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
-        cl1 = clahe.apply(img_greyscale)
+        # clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+        # cl1 = clahe.apply(img_greyscale)
 
-        tracked = self.tracker.track(img_greyscale)
+        tracked = self.tracker.track(img)
 
         if len(tracked) > 0:
 
@@ -136,7 +136,7 @@ class Recognition:
 
             else:
                 self.counter = 0
-                return None
+                return False
 
     def is_recognised(self):
         """

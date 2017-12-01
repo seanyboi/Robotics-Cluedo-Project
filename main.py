@@ -119,12 +119,13 @@ class RoboticsCluedo:
                         rospy.loginfo("Recognition...")
                         # Check if image recognised is already done
                         res = self.rcg.recognise(self.get_raw_image())
+                        print("Res from rcg: ", res)
                         if res and res[0] not in self.detections:
                             self.detections.append(res[0])
                             self.pose_and_snapshot(res[0], res[1])
                         else:
                             # Break the loop and carry on search
-                            print("Tried 5 times detecting not working, moving on...")
+                            print("Tried 3 times detecting not working, moving on...")
                             break
 
                 # Start new search
@@ -170,6 +171,9 @@ class RoboticsCluedo:
             file.write('%(res)s: ' % locals() + str(trans))
             file.close()
 
+            # Store ar pose
+            self.poses.append(trans)
+
         except Exception as e:
             print("Error while writing image pose: ", e)
 
@@ -191,13 +195,11 @@ class RoboticsCluedo:
                         rospy.sleep(2)
                         return True
                     else:
-                        self.poses.append(trans)
                         print("NOT VISITED...")
                         rospy.sleep(2)
                         return False
 
             elif trans and len(self.poses) == 0:
-                self.poses.append(trans)
                 print("NOT VISITED...")
                 rospy.sleep(2)
                 return False

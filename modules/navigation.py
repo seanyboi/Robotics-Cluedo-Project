@@ -74,39 +74,38 @@ class Navigation:
                             # rospy.loginfo("Left area")
                             self.left += 1
 
-                rospy.loginfo("Points: \n left %d, mid %d, right %d", self.left, self.mid, self.right)
+                # rospy.loginfo("Points: \n left %d, mid %d, right %d", self.left, self.mid, self.right)
 
                 if (self.right > self.left) and self.mid > 0:
-                    rospy.loginfo("Going left")
+                    # rospy.loginfo("Going left")
                     self.move_cmd.angular.z= 0.6
                     self.move_cmd.linear.x= 0.1
                     self.cmd_vel.publish(self.move_cmd)
 
                 elif (self.right > 40 and self.left > 40 and self.mid > 0):
-                    rospy.loginfo("Corner")
+                    # rospy.loginfo("Corner")
                     self.rotate(random.randint(110, 180))
 
                 elif (self.right > self.left) and self.mid == 0 and self.right > 40:
-                    rospy.loginfo("Going left")
+                    # rospy.loginfo("Going left")
                     self.move_cmd.angular.z= 0.4
                     self.move_cmd.linear.x= 0.1
                     self.cmd_vel.publish(self.move_cmd)
 
                 elif (self.left >= self.right) and self.mid > 0:
-                    rospy.loginfo("Going right")
+                    # rospy.loginfo("Going right")
                     self.move_cmd.angular.z= -0.6
                     self.move_cmd.linear.x= 0.1
                     self.cmd_vel.publish(self.move_cmd)
 
                 elif (self.left >= self.right) and self.mid == 0 and self.left > 40:
-                    rospy.loginfo("Going right")
+                    # rospy.loginfo("Going right")
                     self.move_cmd.angular.z= -0.4
                     self.move_cmd.linear.x= 0.1
                     self.cmd_vel.publish(self.move_cmd)
 
                 elif self.mid == 0 and (self.right >= 0 or self.left >= 0):
-                    rospy.loginfo("Going forward")
-                    print("Moving forward")
+                    # rospy.loginfo("Going forward")
                     self.move_cmd.angular.z = 0
                     self.move_cmd.linear.x = 0.1
                     self.cmd_vel.publish(self.move_cmd)
