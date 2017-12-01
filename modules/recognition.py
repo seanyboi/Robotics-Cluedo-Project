@@ -26,6 +26,9 @@ class Recognition:
     def __init__(self):
         """ Class constructor """
 
+        # Recognition counter
+        self.counter = 0
+
         # Velocity object
         self.velocity = Twist()
 
@@ -112,16 +115,25 @@ class Recognition:
         else:
             print("Image not detected, getting closer...")
 
-            # Get robot closer to image
-            self.velocity.angular.z = 0
-            self.velocity.linear.x = 0.05
-            self.velocity_pub.publish(self.velocity)
+            if self.counter < 3:
 
-            # Sleep
-            rospy.sleep(2)
+                # Get robot closer to image
+                self.velocity.angular.z = 0
+                self.velocity.linear.x = 0.08
+                self.velocity_pub.publish(self.velocity)
 
-            # Try recognition again
-            self.recognise(raw_image)
+                # Sleep
+                rospy.sleep(2)
+
+                # Try recognition again
+                self.recognise(raw_image)
+
+                # Increase counter
+                self.counter += 1
+
+            else:
+                self.counter = 0
+                return False, False, False
 
     def is_recognised(self):
         """

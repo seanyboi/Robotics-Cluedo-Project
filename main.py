@@ -33,6 +33,9 @@ class RoboticsCluedo:
     def __init__(self):
         """ Class constructor """
 
+        # Counter
+        self.counter = 0
+
         # Detections array
         self.poses = []
         self.detections = []
@@ -95,7 +98,7 @@ class RoboticsCluedo:
             data = self.get_ar_data()
 
             # Run vision logic
-            if bool(data) and self.process and not self.already_visited():
+            if bool(data) and self.process and not self.already_visited() and self.counter < 3:
 
                 while not self.rcg.is_recognised():
 
@@ -103,20 +106,25 @@ class RoboticsCluedo:
                     if not self.pst.ar_in_position():
                         rospy.loginfo("AR positioning...")
                         self.pst.toAR()
+                        self.counter += 1
 
                     # Center in front of the image
                     elif self.pst.ar_in_position and not self.pst.img_centered:
                         rospy.loginfo("Image centering...")
                         self.pst.center_image(self.get_raw_image())
+                        self.counter = 0
 
                     # Recognise image
                     elif self.pst.ar_in_position and self.pst.img_centered:
                         rospy.loginfo("Recognition...")
                         # Check if image recognised is already done
-                        (res, img_to_save) = self.rcg.recognise(self.get_raw_image())
-                        if res and res not in self.detections:
+                        (out, res, img_to_save) = self.rcg.recognise(self.get_raw_image())
+                        if out and res and res not in self.detections:
                             self.detections.append(res)
                             self.pose_and_snapshot(res, img_to_save)
+                        else:
+                            # Break the loop and carry on search
+                            self.counter = 3
 
                 # Start new search
                 self.process = False
@@ -128,10 +136,12 @@ class RoboticsCluedo:
                 rospy.loginfo("Starting new search...")
                 self.nvg.rotate(random.randint(90, 180))
                 self.process = True
+                self.counter = 0
 
             else:
                 rospy.loginfo("Robot is scanning the room")
                 self.nvg.navigate(self.get_scan_data())
+                self.counter = 0
 
         # Acknowledge task completition
         rospy.loginfo("MISSION ACCOMPLISHED, HOUSTON !")

@@ -95,9 +95,6 @@ class Position:
         else:
             rospy.loginfo("Failure in reaching given position, rotate and try again !")
 
-            # Rotate robot
-            self.nvg.rotate(180)
-
             # Try new positioning
             self.ar_positioned = False
 
@@ -151,6 +148,7 @@ class Position:
                 list: trans and quaternion of the ar marker (in the map)
         """
         try:
+            if
             return self.tf_listener.lookupTransform('/map', '/ar_marker_0', rospy.Time(0))
         except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
             pass
