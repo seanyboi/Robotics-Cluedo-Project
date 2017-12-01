@@ -66,7 +66,7 @@ class Position:
         direction = matrix[:3 , 2]
 
         # Compute desired point (in front of ar_marker)
-        pose = trans + direction * 0.5
+        pose = trans + direction * 0.45
 
         # Flip direction
         theta_direction = direction * -1
@@ -78,7 +78,7 @@ class Position:
         theta = math.atan2(theta_direction_norm[1], theta_direction_norm[0])
 
         # Send robot to pose
-        success = self.gtp.goto(int(str(pose[0])[:5]), int(str(pose[1])[:5]), theta)
+        success = self.gtp.goto(float(str(pose[0])[:5]), float(str(pose[1])[:5]), theta)
 
         # Check if position reached and starts
         # centering process by setting the ar
@@ -148,7 +148,7 @@ class Position:
         try:
             return self.tf_listener.lookupTransform('/map', '/ar_marker_0', rospy.Time(0))
         except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-            continue
+            pass
 
     def ar_in_position(self):
         """

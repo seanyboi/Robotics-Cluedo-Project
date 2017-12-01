@@ -17,6 +17,7 @@ import cv2
 import os
 import tf
 import random
+import math
 
 # Ar-marker message data type
 from sensor_msgs.msg import Image
@@ -68,7 +69,7 @@ class RoboticsCluedo:
                 param2: The y coordinate in the map
         """
         # Send robot to pose
-        success = self.gtp.goto(x, y, 0)
+        success = self.gtp.goto(x, y, -1)
 
         if success:
             # Start logic
@@ -161,14 +162,39 @@ class RoboticsCluedo:
 
     def already_visited(self):
 
-        # Get ar-marker trans
-        (trans, _) = self.pst.get_ar_transform()
+        try:
+            # Get ar-marker trans
+            trans = self.pst.get_ar_transform()[0]
+            print("Curr trans: ", trans)
+            print("Poses len: ", len(self.poses))
 
-        if len(self.poses):
-            for pose in self.poses:
-                return (trans[0] >= pose[0] + 0.3 or trans[0] <= pose[0] - 0.3) and (trans[1] >= pose[1] + 0.3 or trans[1] <= pose[1] - 0.3)
-        else:
-            return False
+            if trans and len(self.poses) > 0:
+
+                for pose in self.poses:
+                    print("Pose: ", pose)
+                    res = ((self.abs(trans[0]) - self.abs(pose[0]) <= 0.4) and (self.abs(trans[1]) - self.abs(pose[1]) <= 0.4))
+                    if res:
+                        print("It has been visited already...")
+                        return True
+                    else:
+                        self.poses.append(trans)
+                        print("NOT visited, appended pose and starting recognition...")
+                        return False
+
+            elif trans and len(self.poses) == 0:
+                self.poses.append(trans)
+                print("NOT visited, appended pose and starting recognition...")
+                return False
+
+            else:
+                print("No valid trans...")
+                return False
+
+        except Exception as e:
+            print("Error while checking previous poses... Continue search anyway")
+
+    def abs(self, x):
+        return math.fabs(x)
 
     def set_raw_image(self, data):
         """
@@ -237,8 +263,12 @@ def main(args):
         # Application instance
         rc = RoboticsCluedo()
 
-        # Run the logic (arena2)
-        rc.run(1.54, -4.06)
+        # Let data flow
+        rospy.loginfo("Getting data...")
+        rospy.sleep(3)
+
+        # Run the logic
+        rc.run(-6.64, 0.237)
 
         # Spin it baby !
         rospy.spin()

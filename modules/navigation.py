@@ -82,6 +82,10 @@ class Navigation:
                     self.move_cmd.linear.x= 0.1
                     self.cmd_vel.publish(self.move_cmd)
 
+                elif (self.right > 40 and self.left > 40 and self.mid > 0):
+                    rospy.loginfo("Corner")
+                    self.rotate(random.randint(110, 180))
+
                 elif (self.right > self.left) and self.mid == 0 and self.right > 40:
                     rospy.loginfo("Going left")
                     self.move_cmd.angular.z= 0.4
