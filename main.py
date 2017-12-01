@@ -77,7 +77,7 @@ class RoboticsCluedo:
             self.logic()
         else:
             print("Failed to go to inital pose... Rotation and trying again")
-            self.nvg.rotate(360)
+            self.nvg.rotate(180)
             self.run(x, y)
 
     def logic(self):

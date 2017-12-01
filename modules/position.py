@@ -23,6 +23,7 @@ from cv_bridge import CvBridge, CvBridgeError
 
 # Routines
 from gotopose import GoToPose
+from navigation import Navigation
 from helpers import toMAT, img_processing, get_contour
 
 class Position:
@@ -36,6 +37,7 @@ class Position:
 
         # Object instances
         self.gtp = GoToPose()
+        self.nvg = Navigation()
         self.velocity = Twist()
         self.bridge = CvBridge()
         self.tf_listener = tf.TransformListener()
@@ -91,7 +93,10 @@ class Position:
             self.ar_positioned = True
 
         else:
-            rospy.loginfo("Failure in reaching given position")
+            rospy.loginfo("Failure in reaching given position, rotate and try again !")
+
+            # Rotate robot
+            self.nvg.rotate(180)
 
             # Try new positioning
             self.ar_positioned = False
