@@ -83,11 +83,18 @@ class Recognition:
                 string: The name of matched object
         """
         print("Running recognition...")
-        
+
         # RGB raw image to OpenCV bgr MAT format
         img = toMAT(raw_image)
 
-        tracked = self.tracker.track(img)
+        # Convert to grayscale
+        img_greyscale = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+        # Correct image exposure
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+        cl1 = clahe.apply(img_greyscale)
+
+        tracked = self.tracker.track(img_greyscale)
 
         if len(tracked) > 0:
 
@@ -109,6 +116,9 @@ class Recognition:
             self.velocity.angular.z = 0
             self.velocity.linear.x = 0.05
             self.velocity_pub.publish(self.velocity)
+
+            # Sleep
+            rospy.sleep(2)
 
             # Try recognition again
             self.recognise(raw_image)
