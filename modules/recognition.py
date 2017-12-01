@@ -117,7 +117,7 @@ class Recognition:
 
             print("Counter: ", self.counter)
 
-            if self.counter < 5:
+            if self.counter < 3:
 
                 # Get robot closer to image
                 self.velocity.angular.z = 0

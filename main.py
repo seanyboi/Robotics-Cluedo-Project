@@ -118,7 +118,7 @@ class RoboticsCluedo:
                     elif self.pst.ar_in_position and self.pst.img_centered:
                         rospy.loginfo("Recognition...")
                         # Check if image recognised is already done
-                        res = self.rcg.recognise(self.get_raw_image()))
+                        res = self.rcg.recognise(self.get_raw_image())
                         if res and res[0] not in self.detections:
                             self.detections.append(res[0])
                             self.pose_and_snapshot(res[0], res[1])
@@ -187,18 +187,18 @@ class RoboticsCluedo:
                     print("Pose: ", pose)
                     res = ((self.abs(trans[0] - pose[0]) <= 0.4) and (self.abs(trans[1] - pose[1]) <= 0.4))
                     if res:
-                        print("It has been visited already...")
+                        print("VISITED...")
                         rospy.sleep(2)
                         return True
                     else:
                         self.poses.append(trans)
-                        print("NOT visited, appended pose and starting recognition...")
+                        print("NOT VISITED...")
                         rospy.sleep(2)
                         return False
 
             elif trans and len(self.poses) == 0:
                 self.poses.append(trans)
-                print("NOT visited, appended pose and starting recognition...")
+                print("NOT VISITED...")
                 rospy.sleep(2)
                 return False
 
