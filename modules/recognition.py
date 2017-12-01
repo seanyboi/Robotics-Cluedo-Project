@@ -110,7 +110,7 @@ class Recognition:
                 self.recognised = True
                 tmpmtch_save = temp_matching(res, toMAT(raw_image))
                 print(res, tmpmtch_save.shape)
-                return res, tmpmtch_save
+                return True, res, tmpmtch_save
 
         else:
             print("Image not detected, getting closer...")
