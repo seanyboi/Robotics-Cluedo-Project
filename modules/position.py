@@ -59,42 +59,47 @@ class Position:
             robot in front of the ar-marker.
         """
         # Get ar marker tranformation matrix (respect to the map)
-        (trans, rotation) = self.get_ar_transform()
+        if self.get_ar_transform()[0]:
+            (trans, rotation) = self.get_ar_transform()
 
-        # Get rotation matrix
-        matrix = self.tf_listener.fromTranslationRotation(trans, rotation)
+            # Get rotation matrix
+            matrix = self.tf_listener.fromTranslationRotation(trans, rotation)
 
-        # Get z column in the matrix
-        direction = matrix[:3 , 2]
+            # Get z column in the matrix
+            direction = matrix[:3 , 2]
 
-        # Compute desired point (in front of ar_marker)
-        pose = trans + direction * 0.45
+            # Compute desired point (in front of ar_marker)
+            pose = trans + direction * 0.45
 
-        # Flip direction
-        theta_direction = direction * -1
+            # Flip direction
+            theta_direction = direction * -1
 
-        # Normalise theta_direction
-        theta_direction_norm = theta_direction / (theta_direction[0] ** 2 + theta_direction[1] ** 2) ** 0.5
+            # Normalise theta_direction
+            theta_direction_norm = theta_direction / (theta_direction[0] ** 2 + theta_direction[1] ** 2) ** 0.5
 
-        # Get desired robot rotation
-        theta = math.atan2(theta_direction_norm[1], theta_direction_norm[0])
+            # Get desired robot rotation
+            theta = math.atan2(theta_direction_norm[1], theta_direction_norm[0])
 
-        # Send robot to pose
-        success = self.gtp.goto(float(str(pose[0])[:5]), float(str(pose[1])[:5]), theta)
+            # Send robot to pose
+            success = self.gtp.goto(float(str(pose[0])[:5]), float(str(pose[1])[:5]), theta)
 
-        # Check if position reached and starts
-        # centering process by setting the ar
-        # flag to True
-        if success:
+            # Check if position reached and starts
+            # centering process by setting the ar
+            # flag to True
+            if success:
 
-            rospy.loginfo("Given map position reached")
+                rospy.loginfo("Given map position reached")
 
-            # Start image centering
-            self.ar_positioned = True
+                # Start image centering
+                self.ar_positioned = True
+
+            else:
+                rospy.loginfo("Failure in reaching given position, rotate and try again !")
+
+                # Try new positioning
+                self.ar_positioned = False
 
         else:
-            rospy.loginfo("Failure in reaching given position, rotate and try again !")
-
             # Try new positioning
             self.ar_positioned = False
 
@@ -148,7 +153,6 @@ class Position:
                 list: trans and quaternion of the ar marker (in the map)
         """
         try:
-            if
             return self.tf_listener.lookupTransform('/map', '/ar_marker_0', rospy.Time(0))
         except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
             pass
