@@ -115,6 +115,8 @@ class Recognition:
         else:
             print("Image not detected, getting closer...")
 
+            print("Counter: ", self.counter)
+
             if self.counter < 3:
 
                 # Get robot closer to image
@@ -125,12 +127,12 @@ class Recognition:
                 # Sleep
                 rospy.sleep(2)
 
-                # Try recognition again
-                self.recognise(raw_image)
-
                 # Increase counter
                 self.counter += 1
                 print("Recognition counter: ", self.counter)
+
+                # Try recognition again
+                self.recognise(raw_image)
 
             else:
                 self.counter = 0
