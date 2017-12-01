@@ -185,7 +185,7 @@ class RoboticsCluedo:
 
                 for pose in self.poses:
                     print("Pose: ", pose)
-                    res = ((self.abs(trans[0]) - self.abs(pose[0]) <= 0.5) and (self.abs(trans[1]) - self.abs(pose[1]) <= 0.5))
+                    res = ((self.abs(trans[0] - pose[0]) <= 0.4) and (self.abs(trans[1] - pose[1]) <= 0.4))
                     if res:
                         print("It has been visited already...")
                         rospy.sleep(2)
