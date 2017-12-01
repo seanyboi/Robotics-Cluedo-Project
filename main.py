@@ -80,7 +80,7 @@ class RoboticsCluedo:
             self.logic()
         else:
             print("Failed to go to inital pose... Rotation and trying again")
-            self.nvg.rotate(180)
+            # self.nvg.rotate(180)
             self.run(x, y)
 
     def logic(self):
@@ -118,13 +118,13 @@ class RoboticsCluedo:
                     elif self.pst.ar_in_position and self.pst.img_centered:
                         rospy.loginfo("Recognition...")
                         # Check if image recognised is already done
-                        (out, res, img_to_save) = self.rcg.recognise(self.get_raw_image())
-                        if out and res and res not in self.detections:
-                            self.detections.append(res)
-                            self.pose_and_snapshot(res, img_to_save)
+                        res = self.rcg.recognise(self.get_raw_image()))
+                        if res and res[0] not in self.detections:
+                            self.detections.append(res[0])
+                            self.pose_and_snapshot(res[0], res[1])
                         else:
                             # Break the loop and carry on search
-                            print("Tried 3 time detecting not working, moving on...")
+                            print("Tried 5 times detecting not working, moving on...")
                             break
 
                 # Start new search
@@ -188,15 +188,18 @@ class RoboticsCluedo:
                     res = ((self.abs(trans[0]) - self.abs(pose[0]) <= 0.5) and (self.abs(trans[1]) - self.abs(pose[1]) <= 0.5))
                     if res:
                         print("It has been visited already...")
+                        rospy.sleep(2)
                         return True
                     else:
                         self.poses.append(trans)
                         print("NOT visited, appended pose and starting recognition...")
+                        rospy.sleep(2)
                         return False
 
             elif trans and len(self.poses) == 0:
                 self.poses.append(trans)
                 print("NOT visited, appended pose and starting recognition...")
+                rospy.sleep(2)
                 return False
 
             else:

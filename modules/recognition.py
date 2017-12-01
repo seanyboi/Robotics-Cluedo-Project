@@ -110,18 +110,18 @@ class Recognition:
                 self.recognised = True
                 tmpmtch_save = temp_matching(res, toMAT(raw_image))
                 print(res, tmpmtch_save.shape)
-                return True, res, tmpmtch_save
+                return res, tmpmtch_save
 
         else:
             print("Image not detected, getting closer...")
 
             print("Counter: ", self.counter)
 
-            if self.counter < 3:
+            if self.counter < 5:
 
                 # Get robot closer to image
                 self.velocity.angular.z = 0
-                self.velocity.linear.x = 0.08
+                self.velocity.linear.x = 0.1
                 self.velocity_pub.publish(self.velocity)
 
                 # Sleep
@@ -136,7 +136,7 @@ class Recognition:
 
             else:
                 self.counter = 0
-                return False, False, False
+                return None
 
     def is_recognised(self):
         """
