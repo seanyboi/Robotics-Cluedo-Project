@@ -130,6 +130,7 @@ class Recognition:
 
                 # Increase counter
                 self.counter += 1
+                print("Recognition counter: ", self.counter)
 
             else:
                 self.counter = 0

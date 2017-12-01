@@ -124,6 +124,7 @@ class RoboticsCluedo:
                             self.pose_and_snapshot(res, img_to_save)
                         else:
                             # Break the loop and carry on search
+                            print("Tried 3 time detecting not working, moving on...")
                             break
 
                 # Start new search
@@ -280,7 +281,7 @@ def main(args):
         rospy.sleep(3)
 
         # Run the logic
-        rc.run(1.94, -3.47)
+        rc.run(1.4, -3.94)
 
         # Spin it baby !
         rospy.spin()
