@@ -15,10 +15,6 @@ Redistribution and use in source and binary forms, with or without modification,
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 '''
 
-# TurtleBot must have minimal.launch & amcl_demo.launch
-# running prior to starting this script
-# For simulation: launch gazebo world & amcl_demo prior to run this script
-
 import rospy
 import numpy as np
 import actionlib
@@ -43,7 +39,13 @@ class GoToPose():
     	# Allow up to 5 seconds for the action server to come up
     	self.move_base.wait_for_server(rospy.Duration(5))
 
-    def goto(self, pos, quat):
+    def goto(self, x, y, theta):
+
+        # Build desired pose
+        pos = {'x': x, 'y' : y}
+        quat = {'r1' : 0.000, 'r2' : 0.000, 'r3' : np.sin(theta/2.0), 'r4' : np.cos(theta/2.0)}
+
+        rospy.loginfo("Go to (%s, %s) pose", pos['x'], pos['y'])
 
         # Send a goal
         self.goal_sent = True
