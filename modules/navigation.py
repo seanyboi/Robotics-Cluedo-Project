@@ -164,14 +164,14 @@ class Navigation:
         """
         # Rotation
         self.move_cmd.linear.x = 0
-        self.move_cmd.angular.z = -math.radians(int(deg)) if self.get_choice() else math.radians(int(deg))
+        self.move_cmd.angular.z = -math.radians(int(deg))/2 if self.get_choice() else math.radians(int(deg))/2
         self.side = not self.side
 
         # Time of rotation
         start_time = time.time()
 
         for x in range(30):
-            if (time.time() - start_time < 1):
+            if (time.time() - start_time < 2):
                 self.cmd_vel.publish(self.move_cmd)
                 self.rate.sleep()
 

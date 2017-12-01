@@ -59,7 +59,7 @@ class Position:
             robot in front of the ar-marker.
         """
         # Get ar marker tranformation matrix (respect to the map)
-        if self.get_ar_transform()[0]:
+        if self.get_ar_transform():
             (trans, rotation) = self.get_ar_transform()
 
             # Get rotation matrix
