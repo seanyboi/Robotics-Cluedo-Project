@@ -1,5 +1,12 @@
 #!/usr/bin/env python
 
+"""
+    Processing script.
+
+    It offers image processing routines
+    used by other classes.
+"""
+
 # ROS and OpenCV packages
 from __future__ import division
 import os
@@ -10,6 +17,16 @@ from cv_bridge import CvBridge, CvBridgeError
 
 # Blur the image
 def img_processing(img):
+    """
+        Processes the image carrying a set
+        of different image processing actions.
+
+        Arguments:
+            param1: OpenCV image
+
+        Returns:
+            MAT: processed image
+    """
     # Blurring
     img_blur = cv2.medianBlur(img, 5)
 
@@ -32,6 +49,18 @@ def img_processing(img):
 
 # Obtain biggest contour
 def get_contour(img):
+    """
+        Finds conturs for a given
+        MAT image and returns the
+        contours list and index of
+        the biggest contour.
+
+        Arguments:
+            param1: OpenCV image
+
+        Returns:
+            list, int: contours list and max contour index
+    """
     # Find the contours
     (contours, _) = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
@@ -46,6 +75,16 @@ def get_contour(img):
 
 # Raw to OpenCV conversion
 def toMAT(raw_image):
+    """
+        Converts raw RGB image
+        into MAT format.
+
+        Arguments:
+            param1: raw RGB image
+
+        Returns:
+            MAT: OpenCV image
+    """
     try:
         # RGB raw image to OpenCV bgr MAT format
         cv_image = CvBridge().imgmsg_to_cv2(raw_image, 'bgr8')
@@ -58,7 +97,18 @@ def toMAT(raw_image):
 
 # Template matching for image boundary
 def temp_matching(template, cv_image):
+    """
+        Carries on a template matching
+        to find the boundary of the detected
+        and recognised iamge.
 
+        Arguments:
+            param1: MAT OpenCV image (template)
+            param2: MAT OpenCV image (image to check)
+
+        Returns:
+            MAT: OpenCV image (with boundary draw on top)
+    """
     template = cv2.imread(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', '..', 'data/images/%(template)s.png' % locals())))
     template = cv2.resize(template, None, fx = 0.3, fy = 0.3, interpolation = cv2.INTER_CUBIC)
     t, w, h = template.shape[::-1]
@@ -78,6 +128,7 @@ def temp_matching(template, cv_image):
     else:
         top_left = max_loc
 
+    # Draw boundary on the image
     bottom_right = (top_left[0] + w, top_left[1] + h)
     cv2.rectangle(cv_image, top_left, bottom_right, 255, 2)
     return cv_image

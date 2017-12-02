@@ -40,7 +40,7 @@ class RoboticsCluedo:
         self.poses = []
         self.detections = []
 
-        # Flag
+        # Flags
         self.process = True
         self.initialised = False
 
@@ -80,7 +80,6 @@ class RoboticsCluedo:
             self.logic()
         else:
             print("Failed to go to inital pose... Rotation and trying again")
-            # self.nvg.rotate(180)
             self.run(x, y)
 
     def logic(self):
@@ -178,6 +177,13 @@ class RoboticsCluedo:
             print("Error while writing image pose: ", e)
 
     def already_visited(self):
+        """
+            Check if seen AR-marker has already
+            been visited of not.
+
+            Returns:
+                bool: True or False (visited or not)
+        """
 
         try:
             # Get ar-marker trans
@@ -209,6 +215,16 @@ class RoboticsCluedo:
             print("Error while checking previous poses... Continue search anyway")
 
     def abs(self, x):
+        """
+            Returns absolute value of
+            a given number.
+
+            Arguments:
+                param1: float/int value x
+
+            Returns:
+                int/float: Absolute value of x
+        """
         return math.fabs(x)
 
     def set_raw_image(self, data):
@@ -269,6 +285,9 @@ class RoboticsCluedo:
         return self.ar_data.markers
 
 def main(args):
+    """
+        Main function.
+    """
 
     # Initialise node
     rospy.init_node('robotics_cluedo', anonymous=True)
@@ -283,7 +302,7 @@ def main(args):
         rospy.sleep(3)
 
         # Run the logic
-        rc.run(1.4, -3.94)
+        rc.run(args[0], args[1])
 
         # Spin it baby !
         rospy.spin()

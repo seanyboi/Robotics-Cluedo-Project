@@ -26,19 +26,27 @@ class Navigation:
     def __init__(self):
         """ Class constructor """
 
+        # Ranges counters
         self.mid = 0
         self.left = 0
         self.right = 0
 
-        self.bump_state = None
-        self.move_cmd = Twist()
-
-        self.rate = rospy.Rate(10)
-
+        # Range threshold
         self.threshold = 0.9
 
+        # Bump flag
+        self.bump_state = None
+
+        # Velocity msg
+        self.move_cmd = Twist()
+
+        # Publishing rate
+        self.rate = rospy.Rate(10)
+
+        # Rospy shutdown handling
         rospy.on_shutdown(self.shutdown)
 
+        # Bumper subscriber and Velocity pusblishing
         self.cmd_vel = rospy.Publisher('cmd_vel_mux/input/navi', Twist, queue_size = 50)
         self.bumper = rospy.Subscriber('mobile_base/events/bumper', BumperEvent, self.set_bumper_data)
 
@@ -57,6 +65,7 @@ class Navigation:
 
             else:
 
+                # Count values in ranges
                 for i in range (len(ranges)):
 
                     if ranges[i] < self.threshold:
@@ -74,34 +83,40 @@ class Navigation:
 
                 # rospy.loginfo("Points: \n left %d, mid %d, right %d", self.left, self.mid, self.right)
 
+                # Condition for left movement
                 if (self.right > self.left) and self.mid > 0:
                     # rospy.loginfo("Going left")
                     self.move_cmd.angular.z= 0.6
                     self.move_cmd.linear.x= 0.1
                     self.cmd_vel.publish(self.move_cmd)
 
+                # Condition for corner movement
                 elif (self.right > 40 and self.left > 40 and self.mid > 0):
                     # rospy.loginfo("Corner")
                     self.rotate(random.randint(110, 180))
 
+                # Condition for left movement
                 elif (self.right > self.left) and self.mid == 0 and self.right > 40:
                     # rospy.loginfo("Going left")
                     self.move_cmd.angular.z= 0.4
                     self.move_cmd.linear.x= 0.1
                     self.cmd_vel.publish(self.move_cmd)
 
+                # Condition for right movement
                 elif (self.left >= self.right) and self.mid > 0:
                     # rospy.loginfo("Going right")
                     self.move_cmd.angular.z= -0.6
                     self.move_cmd.linear.x= 0.1
                     self.cmd_vel.publish(self.move_cmd)
 
+                # Condition for right movement
                 elif (self.left >= self.right) and self.mid == 0 and self.left > 40:
                     # rospy.loginfo("Going right")
                     self.move_cmd.angular.z= -0.4
                     self.move_cmd.linear.x= 0.1
                     self.cmd_vel.publish(self.move_cmd)
 
+                # Condition for forward movement
                 elif self.mid == 0 and (self.right >= 0 or self.left >= 0):
                     # rospy.loginfo("Going forward")
                     self.move_cmd.angular.z = 0
