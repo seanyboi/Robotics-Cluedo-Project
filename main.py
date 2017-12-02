@@ -192,16 +192,13 @@ class RoboticsCluedo:
                     res = ((self.abs(trans[0] - pose[0]) <= 0.4) and (self.abs(trans[1] - pose[1]) <= 0.4))
                     if res:
                         print("VISITED...")
-                        rospy.sleep(2)
                         return True
                     else:
                         print("NOT VISITED...")
-                        rospy.sleep(2)
                         return False
 
             elif trans and len(self.poses) == 0:
                 print("NOT VISITED...")
-                rospy.sleep(2)
                 return False
 
             else:
