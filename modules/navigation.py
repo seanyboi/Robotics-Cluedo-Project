@@ -39,8 +39,6 @@ class Navigation:
 
         rospy.on_shutdown(self.shutdown)
 
-        self.side = True
-
         self.cmd_vel = rospy.Publisher('cmd_vel_mux/input/navi', Twist, queue_size = 50)
         self.bumper = rospy.Subscriber('mobile_base/events/bumper', BumperEvent, self.set_bumper_data)
 
@@ -164,7 +162,6 @@ class Navigation:
         # Rotation
         self.move_cmd.linear.x = 0
         self.move_cmd.angular.z = -math.radians(int(deg))/2 if self.get_choice() else math.radians(int(deg))/2
-        self.side = not self.side
 
         # Time of rotation
         start_time = time.time()

@@ -98,9 +98,9 @@ class RoboticsCluedo:
             data = self.get_ar_data()
 
             # Run vision logic
-            if bool(data) and self.process and not self.already_visited() and self.counter < 3:
+            if bool(data) and self.process and not self.already_visited():
 
-                while not self.rcg.is_recognised():
+                while not self.rcg.is_recognised() and self.counter < 3:
 
                     # Position in front of the AR
                     if not self.pst.ar_in_position():
