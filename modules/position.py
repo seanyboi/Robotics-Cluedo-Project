@@ -37,7 +37,6 @@ class Position:
 
         # Object instances
         self.gtp = GoToPose()
-        self.nvg = Navigation()
         self.velocity = Twist()
         self.bridge = CvBridge()
         self.tf_listener = tf.TransformListener()
