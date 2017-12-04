@@ -121,7 +121,7 @@ class Recognition:
 
                 # Get robot closer to image
                 self.velocity.angular.z = 0
-                self.velocity.linear.x = 0.1
+                self.velocity.linear.x = 0.15
                 self.velocity_pub.publish(self.velocity)
 
                 # Sleep
