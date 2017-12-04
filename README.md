@@ -25,6 +25,11 @@ The final step in the chain is recognising the image and store its map position 
 
 ## **RESULTS**
 
-![](https://media.giphy.com/media/3ohs7TDZMDM4ZjHPRC/giphy.gif)
+Object Avoidance:
+https://media.giphy.com/media/3oxHQewMafsJwPYnkY/giphy.gif
 
-![](https://media.giphy.com/media/3ohs7V5iZVpXLg6vOU/giphy.gif)
+Object Detections & Recognition:
+https://media.giphy.com/media/3ohs7TDZMDM4ZjHPRC/giphy.gif
+
+Full working solution:
+https://media.giphy.com/media/3ohs7V5iZVpXLg6vOU/giphy.gif
