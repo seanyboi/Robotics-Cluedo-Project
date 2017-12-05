@@ -26,10 +26,13 @@ The final step in the chain is recognising the image and store its map position 
 ## **RESULTS**
 
 Object Avoidance:
-https://media.giphy.com/media/3oxHQewMafsJwPYnkY/giphy.gif
+https://www.youtube.com/watch?v=seu7PmEVW9Y
 
-Object Detections & Recognition:
-https://media.giphy.com/media/3ohs7TDZMDM4ZjHPRC/giphy.gif
+Object Detection & Recognition:
+https://www.youtube.com/watch?v=KfGFNOKT0Tk
 
-Full working solution:
-https://media.giphy.com/media/3ohs7V5iZVpXLg6vOU/giphy.gif
+Object Search & Detection & Recognition
+https://www.youtube.com/watch?v=smiY0M0Eb4k
+
+Full solution:
+https://www.youtube.com/watch?v=UxJIaxV9_yU
