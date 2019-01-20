@@ -8,7 +8,7 @@ The task that the robot should perform are the following:
 
 1. Object Search.
 2. Object Detection.
-3. Object Detection.
+3. Object Recognition.
 
 ### *Object Search*
 
